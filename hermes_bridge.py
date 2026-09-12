@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
 """
-HERMES BRIDGE — Puente de integración con Neural Fellowship
-============================================================
+HERMES NEURAL BRIDGE — Integración Real
+========================================
+Puente completo entre Hermes Agent y Neural Fellowship.
 
-Este módulo expone funciones de alto nivel para que Hermes Agent
-pueda invocar el sistema Neural Fellowship (neural_fellowship.py)
-como biblioteca Python.
+Flujo de integración:
+1. Hermes recibe tarea
+2. Invoca route_task() → obtiene maestro + especialista + si es automatizable
+3a. Si es automatizable → auto_execute() → terminal
+3b. Si requiere IA → delegate_task() con prompt del especialista
 
-Funciones expuestas:
+Funciones:
   - route_task(description) -> dict
-  - auto_execute(description) -> dict
+  - run_task(description) -> dict  (flujo completo)
+  - auto_execute(description, dry_run) -> dict
   - remember(agent_id, error, context, solution) -> dict
   - recall_lessons(agent_id) -> list
   - get_system_status() -> dict
-
-Uso desde Hermes (via Python terminal):
-  import sys
-  sys.path.insert(0, '/data/data/com.termux/files/home/tmp/Agentes-Maestros-')
-  from hermes_bridge import route_task, auto_execute, remember, recall_lessons, get_system_status
-  
-  result = route_task("Crear API REST con FastAPI")
-  print(result)
 """
 
 import sys
@@ -28,77 +24,32 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-# ============================================================================
-# PATH CONFIGURATION
-# ============================================================================
-
-# Path to the repository containing neural_fellowship.py
-REPO_PATH = Path("/data/data/com.termux/files/home/tmp/Agentes-Maestros-")
-
-# Ensure we can import neural_fellowship
+# Path configuration
+REPO_PATH = Path(__file__).parent
 if str(REPO_PATH) not in sys.path:
     sys.path.insert(0, str(REPO_PATH))
 
-# ============================================================================
-# IMPORTS from neural_fellowship.py
-# ============================================================================
+from neural_fellowship import (
+    Orquestador,
+    AutoExecutor,
+    LearningSystem,
+    MemorySystem,
+    Orchestrator,
+    DetectorTareas,
+    AGENTES_MAESTROS,
+    AGENTES_ESPECIALIZADOS,
+)
 
-try:
-    from neural_fellowship import (
-        Orquestador,
-        AutoExecutor,
-        LearningSystem,
-        MemorySystem,
-        Orchestrator,
-        DetectorTareas,
-        AGENTES_MAESTROS,
-        AGENTES_ESPECIALIZADOS,
-    )
-except ImportError as e:
-    raise ImportError(
-        f"No se pudo importar neural_fellowship.py desde {REPO_PATH}. "
-        f"Asegúrate de que el archivo existe. Error: {e}"
-    )
-
-
-# ============================================================================
-# BRIDGE FUNCTIONS
-# ============================================================================
 
 def route_task(description: str) -> dict:
-    """
-    Determina el mejor agente (maestro + especialista) para una tarea.
-    
-    Invoca el Orquestador de Neural Fellowship para hacer routing
-    inteligente basado en scoring de palabras clave.
-    
-    Args:
-        description: Descripción de la tarea en lenguaje natural.
-        
-    Returns:
-        dict con keys:
-          - tarea: descripción original
-          - maestro: {maestro, confianza, motivo}
-          - especialista: {especialista, maestro, confianza, capacidades}
-          - automatizable: bool (True si se puede auto-ejecutar)
-          
-    Ejemplo:
-        >>> route_task("Crear API REST con FastAPI")
-        {
-            "tarea": "Crear API REST con FastAPI",
-            "maestro": {"maestro": "NEXUS", "confianza": 75, "motivo": "Match scoring: 75 pts"},
-            "especialista": {"especialista": "engineering-backend-architect", ...},
-            "automatizable": True
-        }
-    """
+    """Route a task to the best agent."""
     if not description or not description.strip():
-        return {"error": "Descripción de tarea vacía"}
+        return {"error": "Empty task description"}
     
     try:
         orchestrador = Orquestador()
         resultado = orchestrador.ruta_completa(description.strip())
         
-        # Enrich with agent metadata
         maestro_id = resultado["maestro"]["maestro"]
         maestro_info = AGENTES_MAESTROS.get(maestro_id, {})
         
@@ -110,63 +61,114 @@ def route_task(description: str) -> dict:
             }
         
         return {
-            "tarea": resultado["tarea"],
+            "task": resultado["tarea"],
             "maestro": {
                 "id": maestro_id,
-                "nombre": maestro_id,
-                "dominio": maestro_info.get("dominio", ""),
+                "name": maestro_id,
+                "domain": maestro_info.get("dominio", ""),
                 "division": maestro_info.get("division", ""),
-                "confianza": resultado["maestro"]["confianza"],
-                "motivo": resultado["maestro"]["motivo"],
+                "confidence": resultado["maestro"]["confianza"],
+                "reason": resultado["maestro"]["motivo"],
                 "emoji": maestro_info.get("emoji", "❓"),
                 "automatizable": maestro_info.get("automatizable", False),
             },
-            "especialista": {
+            "specialist": {
                 "id": especialista_id,
-                "nombre": especialista_id,
+                "name": especialista_id,
                 "maestro": resultado["especialista"].get("maestro", ""),
-                "confianza": resultado["especialista"].get("confianza", 0),
-                "capacidades": especialista_info.get("capacidades", []),
+                "confidence": resultado["especialista"].get("confianza", 0),
+                "capabilities": especialista_info.get("capacidades", []),
             },
             "automatizable": resultado["automatizable"],
             "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
-        return {"error": f"Error en route_task: {str(e)}", "tarea": description}
+        return {"error": f"Route error: {str(e)}", "task": description}
+
+
+def run_task(description: str, dry_run: bool = False) -> dict:
+    """
+    Full task execution flow.
     
-    return {"error": "Resultado no generado", "tarea": description}
+    1. Route the task
+    2. If automatizable → auto_execute
+    3. If not → return delegation info for Hermes delegate_task
+    """
+    # Step 1: Route
+    route = route_task(description)
+    if "error" in route:
+        return route
+    
+    result = {
+        "route": route,
+        "execution": None,
+        "dry_run": dry_run,
+    }
+    
+    # Step 2: Execute or delegate
+    if route["automatizable"]:
+        # Mechanical task → auto_execute
+        executor = AutoExecutor()
+        exec_result = executor.ejecutar(description.strip(), dry_run=dry_run)
+        exec_result["timestamp"] = datetime.now().isoformat()
+        result["execution"] = {
+            "type": "auto",
+            "result": exec_result,
+        }
+    else:
+        # AI task → prepare delegation
+        specialist = route["specialist"]
+        maestro = route["maestro"]
+        
+        # Build the specialist prompt
+        specialist_prompt = _build_specialist_prompt(
+            task=description,
+            specialist_id=specialist["id"],
+            specialist_capabilities=specialist.get("capabilities", []),
+            maestro_id=maestro["id"],
+            maestro_domain=maestro["domain"],
+        )
+        
+        result["execution"] = {
+            "type": "delegate",
+            "delegation": {
+                "specialist_id": specialist["id"],
+                "maestro_id": maestro["id"],
+                "prompt": specialist_prompt,
+                "confidence": specialist.get("confidence", 0),
+            }
+        }
+    
+    return result
+
+
+def _build_specialist_prompt(task: str, specialist_id: str, 
+                              specialist_capabilities: list,
+                              maestro_id: str, maestro_domain: str) -> str:
+    """Build a prompt for a specialist agent."""
+    return f"""You are {specialist_id}, a specialist in {maestro_domain}.
+
+## Your Role
+- Domain: {maestro_domain}
+- Capabilities: {', '.join(specialist_capabilities)}
+
+## Task
+{task}
+
+## Instructions
+1. Review your capabilities and execute the task
+2. If you encounter errors, document them for learning
+3. Report results clearly
+4. If the task is outside your scope, indicate what specialist should handle it
+
+## Output
+Execute the task and report results."""
 
 
 def auto_execute(description: str, dry_run: bool = False) -> dict:
-    """
-    Intenta auto-ejecutar una tarea mecánica.
-    
-    Invoca el AutoExecutor de Neural Fellowship para detectar y ejecutar
-    comandos seguros: mkdir, touch, cp, mv, git, pip, npm, etc.
-    
-    Args:
-        description: Descripción de la tarea mecánica.
-        dry_run: Si True, solo simula la ejecución.
-        
-    Returns:
-        dict con keys:
-          - tarea: descripción original
-          - accion: tipo de acción detectada (mkdir, git_commit, etc.)
-          - status: success | error | denied | no_automatizable
-          - mensaje: descripción del resultado
-          - dry_run: si fue simulación
-          
-    Ejemplo:
-        >>> auto_execute("crear carpeta ~/projects/mi-app")
-        {
-            "tarea": "crear carpeta ~/projects/mi-app",
-            "accion": "mkdir",
-            "status": "success",
-            "mensaje": "Carpeta creada: /data/data/com.termux/files/home/projects/mi-app"
-        }
-    """
+    """Auto-execute a mechanical task."""
     if not description or not description.strip():
-        return {"error": "Descripción de tarea vacía"}
+        return {"error": "Empty task description"}
     
     try:
         executor = AutoExecutor()
@@ -174,42 +176,13 @@ def auto_execute(description: str, dry_run: bool = False) -> dict:
         resultado["timestamp"] = datetime.now().isoformat()
         return resultado
     except Exception as e:
-        return {
-            "error": f"Error en auto_execute: {str(e)}",
-            "tarea": description,
-            "status": "error",
-        }
+        return {"error": f"Auto-execute error: {str(e)}", "task": description, "status": "error"}
 
 
 def remember(agent_id: str, error: str, context: str, solution: str, tags=None) -> dict:
-    """
-    Registra un error/lección aprendida de un agente.
-    
-    Invoca el LearningSystem de Neural Fellowship para persistir
-    el conocimiento y evitar repetir errores.
-    
-    Args:
-        agent_id: identificador del agente (ej: "NEXUS", "design-ui-designer")
-        error: descripción del error cometido
-        context: contexto donde ocurrió el error
-        solution: solución aplicada
-        tags: lista de tags opcionales para clasificar
-        
-    Returns:
-        dict con la lección registrada/actualizada
-        
-    Ejemplo:
-        >>> remember("NEXUS", "ModuleNotFoundError", "FastAPI sin instalar", "pip install fastapi")
-        {
-            "agent_id": "NEXUS",
-            "error": "ModuleNotFoundError",
-            "context": "FastAPI sin instalar",
-            "solution": "pip install fastapi",
-            "occurrences": 1
-        }
-    """
+    """Record a lesson learned."""
     if not agent_id or not error:
-        return {"error": "Se requieren agent_id y error"}
+        return {"error": "agent_id and error are required"}
     
     try:
         ls = LearningSystem()
@@ -223,60 +196,24 @@ def remember(agent_id: str, error: str, context: str, solution: str, tags=None) 
         resultado["timestamp"] = datetime.now().isoformat()
         return resultado
     except Exception as e:
-        return {
-            "error": f"Error en remember: {str(e)}",
-            "agent_id": agent_id,
-            "error_desc": error,
-        }
+        return {"error": f"Remember error: {str(e)}", "agent_id": agent_id}
 
 
 def recall_lessons(agent_id: str) -> list:
-    """
-    Recupera todas las lecciones aprendidas de un agente.
-    
-    Invoca el LearningSystem de Neural Fellowship para consultar
-    lecciones previas registradas por el agente.
-    
-    Args:
-        agent_id: identificador del agente
-        
-    Returns:
-        lista de lecciones (dicts) ordenadas por relevancia
-        
-    Ejemplo:
-        >>> recall_lessons("NEXUS")
-        [
-            {
-                "agent_id": "NEXUS",
-                "error": "ModuleNotFoundError",
-                "context": "FastAPI sin instalar",
-                "solution": "pip install fastapi",
-                "occurrences": 2
-            }
-        ]
-    """
+    """Recall all lessons for an agent."""
     if not agent_id:
         return []
     
     try:
         ls = LearningSystem()
         lessons = ls.get_agent_lessons(agent_id.strip())
-        # Sort by occurrences (most frequent first)
         return sorted(lessons, key=lambda x: x.get("occurrences", 0), reverse=True)
     except Exception as e:
-        return [{"error": f"Error en recall_lessons: {str(e)}"}]
+        return [{"error": f"Recall error: {str(e)}"}]
 
 
 def get_warnings_for_agent(agent_id: str) -> list:
-    """
-    Obtiene advertencias para un agente (errores con 2+ ocurrencias).
-    
-    Args:
-        agent_id: identificador del agente
-        
-    Returns:
-        lista de advertencias con soluciones
-    """
+    """Get warnings for an agent (2+ occurrences)."""
     if not agent_id:
         return []
     
@@ -284,20 +221,11 @@ def get_warnings_for_agent(agent_id: str) -> list:
         ls = LearningSystem()
         return ls.get_warnings_for_agent(agent_id.strip())
     except Exception as e:
-        return [{"error": f"Error en get_warnings: {str(e)}"}]
+        return [{"error": f"Warnings error: {str(e)}"}]
 
 
 def generate_pre_execution_checklist(agent_id: str, task: str) -> list:
-    """
-    Genera una checklist pre-ejecución basada en errores pasados.
-    
-    Args:
-        agent_id: identificador del agente
-        task: descripción de la tarea a ejecutar
-        
-    Returns:
-        lista de strings con advertencias y recordatorios
-    """
+    """Generate pre-execution checklist based on past errors."""
     if not agent_id or not task:
         return []
     
@@ -305,54 +233,42 @@ def generate_pre_execution_checklist(agent_id: str, task: str) -> list:
         ls = LearningSystem()
         return ls.generate_pre_execution_checklist(agent_id.strip(), task.strip())
     except Exception as e:
-        return [f"Error en generate_pre_execution_checklist: {str(e)}"]
+        return [f"Checklist error: {str(e)}"]
+
+
+def search_memory(query: str) -> list:
+    """Search in system memory."""
+    if not query:
+        return []
+    
+    try:
+        mem = MemorySystem()
+        return mem.buscar_en_memoria(query.strip())
+    except Exception as e:
+        return [{"error": f"Search error: {str(e)}"}]
 
 
 def get_system_status() -> dict:
-    """
-    Obtiene el estado completo del sistema Neural Fellowship.
-    
-    Invoca todos los subsistemas: Orchestrator, MemorySystem,
-    LearningSystem, y DetectorTareas.
-    
-    Returns:
-        dict con el estado completo del sistema
-        
-    Ejemplo:
-        >>> get_system_status()
-        {
-            "orchestrator": {"active_agents": 0, "completed_tasks": 3, ...},
-            "memory": {"conexiones": 12, "lecciones": 5, ...},
-            "learning": {"total_lessons": 5, "agents_with_lessons": 2, ...},
-            "tasks": {"total": 15, "pendientes": 10, ...},
-            "agentes_maestros": 63,
-            "agentes_especializados": 85,
-            "timestamp": "2025-01-15T10:30:00"
-        }
-    """
+    """Get complete system status."""
     try:
-        # Orchestrator status
         orch = Orchestrator()
         orch_status = orch.get_status()
     except Exception as e:
         orch_status = {"error": str(e)}
     
     try:
-        # Memory system status
         mem = MemorySystem()
         mem_stats = mem.get_stats()
     except Exception as e:
         mem_stats = {"error": str(e)}
     
     try:
-        # Learning system status
         ls = LearningSystem()
         learn_stats = ls.get_stats()
     except Exception as e:
         learn_stats = {"error": str(e)}
     
     try:
-        # Task detector status
         detector = DetectorTareas()
         task_stats = detector.get_stats()
     except Exception as e:
@@ -369,93 +285,81 @@ def get_system_status() -> dict:
     }
 
 
-def search_memory(query: str) -> list:
-    """
-    Busca en la memoria del sistema.
-    
-    Args:
-        query: texto a buscar
-        
-    Returns:
-        lista de resultados encontrados
-    """
-    if not query:
-        return []
-    
-    try:
-        mem = MemorySystem()
-        return mem.buscar_en_memoria(query.strip())
-    except Exception as e:
-        return [{"error": f"Error en search_memory: {str(e)}"}]
-
-
 # ============================================================================
-# CLI for testing
+# CLI
 # ============================================================================
 
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description="Hermes Bridge — Neural Fellowship Integration")
-    parser.add_argument("command", choices=[
-        "route", "auto", "remember", "recall", "status",
-        "warnings", "checklist", "memory"
-    ])
-    parser.add_argument("--description", "-d", type=str, help="Descripción de la tarea")
-    parser.add_argument("--agent", "-a", type=str, help="ID del agente")
-    parser.add_argument("--error", "-e", type=str, help="Descripción del error")
-    parser.add_argument("--context", "-c", type=str, help="Contexto del error")
-    parser.add_argument("--solution", "-s", type=str, help="Solución aplicada")
-    parser.add_argument("--tags", "-t", type=str, help="Tags separados por coma")
-    parser.add_argument("--query", "-q", type=str, help="Query para búsqueda en memoria")
-    parser.add_argument("--dry-run", action="store_true", help="Simular ejecución")
+    parser = argparse.ArgumentParser(description="Hermes Neural Bridge — Integration")
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+    
+    # route
+    route_parser = subparsers.add_parser("route", help="Route a task to best agent")
+    route_parser.add_argument("description", type=str, help="Task description")
+    
+    # run (full flow)
+    run_parser = subparsers.add_parser("run", help="Run full task flow")
+    run_parser.add_argument("description", type=str, help="Task description")
+    run_parser.add_argument("--dry-run", action="store_true", help="Simulate execution")
+    
+    # auto
+    auto_parser = subparsers.add_parser("auto", help="Auto-execute mechanical task")
+    auto_parser.add_argument("description", type=str, help="Task description")
+    auto_parser.add_argument("--dry-run", action="store_true", help="Simulate execution")
+    
+    # remember
+    remember_parser = subparsers.add_parser("remember", help="Record a lesson")
+    remember_parser.add_argument("--agent", "-a", required=True, help="Agent ID")
+    remember_parser.add_argument("--error", "-e", required=True, help="Error description")
+    remember_parser.add_argument("--context", "-c", required=True, help="Context")
+    remember_parser.add_argument("--solution", "-s", required=True, help="Solution")
+    remember_parser.add_argument("--tags", "-t", help="Comma-separated tags")
+    
+    # recall
+    recall_parser = subparsers.add_parser("recall", help="Recall lessons")
+    recall_parser.add_argument("--agent", "-a", required=True, help="Agent ID")
+    
+    # warnings
+    warn_parser = subparsers.add_parser("warnings", help="Get warnings")
+    warn_parser.add_argument("--agent", "-a", required=True, help="Agent ID")
+    
+    # checklist
+    check_parser = subparsers.add_parser("checklist", help="Pre-execution checklist")
+    check_parser.add_argument("--agent", "-a", required=True, help="Agent ID")
+    check_parser.add_argument("--task", "-t", required=True, help="Task description")
+    
+    # memory
+    mem_parser = subparsers.add_parser("memory", help="Search memory")
+    mem_parser.add_argument("--query", "-q", required=True, help="Search query")
+    
+    # status
+    subparsers.add_parser("status", help="System status")
     
     args = parser.parse_args()
     
     if args.command == "route":
-        if not args.description:
-            print("Se requiere --description")
-            sys.exit(1)
         result = route_task(args.description)
-        
+    elif args.command == "run":
+        result = run_task(args.description, dry_run=args.dry_run)
     elif args.command == "auto":
-        if not args.description:
-            print("Se requiere --description")
-            sys.exit(1)
         result = auto_execute(args.description, dry_run=args.dry_run)
-        
     elif args.command == "remember":
-        if not all([args.agent, args.error, args.context, args.solution]):
-            print("Se requieren --agent, --error, --context, --solution")
-            sys.exit(1)
         tags = args.tags.split(",") if args.tags else []
         result = remember(args.agent, args.error, args.context, args.solution, tags=tags)
-        
     elif args.command == "recall":
-        if not args.agent:
-            print("Se requiere --agent")
-            sys.exit(1)
         result = recall_lessons(args.agent)
-        
     elif args.command == "warnings":
-        if not args.agent:
-            print("Se requiere --agent")
-            sys.exit(1)
         result = get_warnings_for_agent(args.agent)
-        
     elif args.command == "checklist":
-        if not all([args.agent, args.description]):
-            print("Se requieren --agent y --description")
-            sys.exit(1)
-        result = generate_pre_execution_checklist(args.agent, args.description)
-        
+        result = generate_pre_execution_checklist(args.agent, args.task)
+    elif args.command == "memory":
+        result = search_memory(args.query)
     elif args.command == "status":
         result = get_system_status()
-        
-    elif args.command == "memory":
-        if not args.query:
-            print("Se requiere --query")
-            sys.exit(1)
-        result = search_memory(args.query)
+    else:
+        parser.print_help()
+        sys.exit(1)
     
     print(json.dumps(result, indent=2, ensure_ascii=False, default=str))

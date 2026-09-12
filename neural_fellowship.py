@@ -227,7 +227,7 @@ AGENTES_MAESTROS = {
         "emoji": "🔄",
         "especialidades": ["orchestration", "routing", "escalation", "load-balancing"],
         "routing": "Orquestación central, delegación entre agentes",
-        "automatizable": True,
+        "automatizable": False,
     },
     "CONFIG": {
         "dominio": "Configuración",

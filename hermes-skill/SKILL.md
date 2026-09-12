@@ -1,239 +1,179 @@
 ---
 name: hermes-neural-fellowship
-description: Use when Hermes needs to route tasks to Neural Fellowship agent network, auto-execute mechanical tasks, or learn from errors. Bridges Hermes Agent with the Neural Fellowship multi-agent system (63 maestros + 85 especialistas).
-version: 1.0.0
-tags: [neural-fellowship, agent-routing, auto-executor, learning-system, multi-agent]
+description: "Hermes Neural Fellowship Bridge — Integración completa con Hermes Agent"
+version: 2.0.0
+tags: [neural-fellowship, agent-routing, delegate-task, auto-executor, learning-system]
 ---
 
 # Hermes Neural Fellowship Bridge
 
-Integration bridge between Hermes Agent and the Neural Fellowship multi-agent system. Provides intelligent task routing, auto-execution of mechanical tasks, and learning from errors.
+Puente de integración real entre Hermes Agent y Neural Fellowship. Permite routing inteligente, auto-ejecución y delegación de tareas a especialistas vía `delegate_task`.
 
-## Trigger Conditions
+## Cuándo usar
 
-- User asks to "route a task" or "find the right agent"
-- User wants to auto-execute file/system operations (mkdir, git, pip, etc.)
-- User reports an error that should be remembered for future reference
-- User asks for "system status" of Neural Fellowship
-- User wants to recall past lessons learned by an agent
+- El usuario pide ejecutar una tarea compleja y necesita saber qué agente es el mejor
+- El usuario quiere auto-ejecutar operaciones mecánicas (mkdir, git, pip, etc.)
+- El usuario reporta un error y quiere registrarlo para no repetirlo
+- Se necesita estado del sistema neuronal
 
-## Workflow: Tarea → Neural Fellowship → Ejecución
+## Flujo de Integración
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     HERMES AGENT                            │
-│                                                             │
-│  1. Recibe tarea del usuario                                │
-│         │                                                   │
-│         ▼                                                   │
-│  2. Invoca route_task(description) via hermes_bridge.py     │
-│         │                                                   │
-│         ▼                                                   │
-│  3. Neural Fellowship determina:                            │
-│     - Maestro óptimo (NEXUS, ARCAN, AGENCY, etc.)           │
-│     - Especialista (engineering-backend-architect, etc.)    │
-│     - Nivel de automatización (True/False)                  │
-│         │                                                   │
-│         ├──► automatizable=True ──► auto_execute()          │
-│         │                         → terminal/direct exec     │
-│         │                                                   │
-│         └──► automatizable=False ──► delegate_task()        │
-│                                   → specialist prompt       │
-│                                   → IA agent execution      │
-└─────────────────────────────────────────────────────────────┘
+Tarea → route_task()
+         ↓
+    automatizable? → True → auto_execute() → terminal
+         ↓
+    False → run_task() → delegate_task() con prompt del especialista
+         ↓
+    Especialista ejecuta vía subagente
 ```
 
-## Step-by-Step Integration
+## Cómo invocar desde Hermes
 
-### Step 1: Route the Task
+### 1. Obtener routing de una tarea
 
 ```python
 import sys
 sys.path.insert(0, '/data/data/com.termux/files/home/tmp/Agentes-Maestros-')
 from hermes_bridge import route_task
 
-result = route_task("Crear landing page con React y Tailwind")
-# Returns:
-# {
-#   "maestro": {"id": "NEXUS", "dominio": "Desarrollo", "confianza": 85, ...},
-#   "especialista": {"id": "engineering-frontend-developer", "confianza": 60, ...},
-#   "automatizable": True
-# }
+result = route_task("Crear landing page con SEO")
+# → {"maestro": {"id": "AGENCY", "emoji": "📢", ...}, 
+#    "specialist": {"id": "marketing-seo-specialist", ...},
+#    "automatizable": False}
 ```
 
-### Step 2: Check Lessons (pre-execution)
+### 2. Ejecutar flujo completo
 
 ```python
-from hermes_bridge import recall_lessons, generate_pre_execution_checklist
+from hermes_bridge import run_task
 
-agent_id = result["especialista"]["id"]  # "engineering-frontend-developer"
-lessons = recall_lessons(agent_id)
-checklist = generate_pre_execution_checklist(agent_id, "Crear landing page con React y Tailwind")
+result = run_task("crear carpeta ~/projects/nueva")
+# Si es automatizable → ejecuta directamente
+# Si no → retorna dict con 'type': 'delegate' y el prompt listo
+
+# Si result['execution']['type'] == 'delegate':
+#   Delegar a Hermes delegate_task con el prompt
 ```
 
-### Step 3a: Auto-Execute (mechanical tasks)
-
-If `automatizable=True` and the task is mechanical:
+### 3. Auto-ejecutar directamente
 
 ```python
 from hermes_bridge import auto_execute
 
-exec_result = auto_execute("crear carpeta ~/projects/landing-page")
-# Returns: {"status": "success", "accion": "mkdir", ...}
+result = auto_execute("pip install fastapi")
+# → {"status": "success", "mensaje": "..."}
 ```
 
-Or use `dry_run=True` to preview without executing:
-```python
-preview = auto_execute("git commit Initial commit", dry_run=True)
-```
-
-### Step 3b: Delegate to IA Agent (creative/complex tasks)
-
-If `automatizable=False`, use Hermes `delegate_task` with the specialist prompt:
-
-```
-delegate_task(
-    prompt=f"""Eres el especialista {result['especialista']['id']} 
-    (Maestro: {result['maestro']['id']} - {result['maestro']['dominio']}).
-    
-    Capacidades: {', '.join(result['especialista']['capacidades'])}
-    
-    Lecciones previas:
-    {chr(10).join(f'- {l["error"]}: {l["solution"]}' for l in lessons)}
-    
-    Tarea: {description}""",
-    task_type="specialist"
-)
-```
-
-### Step 4: Remember Errors (post-execution)
-
-If an error occurs during execution:
+### 4. Registrar error/lección
 
 ```python
 from hermes_bridge import remember
 
-remember(
-    agent_id="NEXUS",
-    error="ModuleNotFoundError: react-scripts",
-    context="Creando proyecto React con create-react-app",
-    solution="npm install react-scripts --save-dev",
-    tags=["react", "npm", "dependencies"]
-)
+remember("NEXUS", "ModuleNotFoundError", "FastAPI sin instalar", "pip install fastapi")
+# → registra la lección para no repetir el error
 ```
 
-## Function Reference
+### 5. Consultar estado
 
-| Function | Input | Output | Description |
-|----------|-------|--------|-------------|
-| `route_task(description)` | str | dict | Routes task to optimal agent |
-| `auto_execute(description, dry_run)` | str, bool | dict | Auto-executes mechanical tasks |
-| `remember(agent_id, error, context, solution)` | str×4 | dict | Records error as lesson |
-| `recall_lessons(agent_id)` | str | list | Retrieves agent's past lessons |
-| `get_system_status()` | — | dict | Full system status |
-| `get_warnings_for_agent(agent_id)` | str | list | Frequent errors (2+ occurrences) |
-| `generate_pre_execution_checklist(agent_id, task)` | str×2 | list | Pre-execution checklist |
-| `search_memory(query)` | str | list | Searches memory graph |
+```python
+from hermes_bridge import get_system_status
+status = get_system_status()
+# → estado completo: orchestrator, memory, learning, tasks
+```
 
-## Real-World Examples
+## Ejemplo real: Flujo completo con Hermes
 
-### Example 1: Web Development Task
+```python
+# Paso 1: Route
+import sys
+sys.path.insert(0, '/data/data/com.termux/files/home/tmp/Agentes-Maestros-')
+from hermes_bridge import route_task
 
-**User:** "Crear API REST con FastAPI y PostgreSQL"
+routing = route_task("Crear landing page con SEO")
+print(f"Maestro: {routing['maestro']['id']}")
+print(f"Especialista: {routing['specialist']['id']}")
+print(f"Automatizable: {routing['automatizable']}")
 
-**Hermes workflow:**
-1. `route_task("Crear API REST con FastAPI y PostgreSQL")` → NEXUS, engineering-backend-architect
-2. `recall_lessons("engineering-backend-architect")` → check for past DB connection errors
-3. Since `automatizable=True` for NEXUS → delegate to backend architect agent with context
-4. Agent creates the API code
-5. If error: `remember("NEXUS", "psycopg2 compile error", "DB connection", "apt install libpq-dev")`
+# Paso 2: Según resultado
+if routing['automatizable']:
+    from hermes_bridge import auto_execute
+    result = auto_execute("crear landing page")
+    print(f"Resultado: {result}")
+else:
+    # Delegar a subagente con el prompt del especialista
+    specialist = routing['specialist']
+    maestro = routing['maestro']
+    
+    delegation_context = f"""
+Eres {specialist['id']}, especialista en {maestro['domain']}.
+Capacidades: {', '.join(specialist.get('capabilities', []))}
 
-### Example 2: Marketing Campaign
+Tarea: Crear landing page con SEO
 
-**User:** "Crear campaña de email marketing para lanzamiento de producto"
+Instrucciones:
+1. Consulta lecciones previas antes de ejecutar
+2. Ejecuta la tarea
+3. Reporta resultados
+"""
+    # Luego: delegate_task con delegation_context
+    print(f"Delegar: {specialist['id']}")
+```
 
-**Hermes workflow:**
-1. `route_task("email marketing lanzamiento")` → AGENCY, marketing-email-marketing-strategist
-2. `automatizable=False` → delegate to AGENCY specialist agent
-3. Agent creates campaign strategy, copy, and sequence
-
-### Example 3: File System Automation
-
-**User:** "Preparar estructura de proyecto Python"
-
-**Hermes workflow:**
-1. `auto_execute("crear carpeta ~/projects/mi-proyecto")` → mkdir success
-2. `auto_execute("crear carpeta ~/projects/mi-proyecto/src")` → mkdir success
-3. `auto_execute("crear archivo ~/projects/mi-proyecto/README.md")` → touch success
-
-### Example 4: Error Recovery
-
-**User:** "Tuve un error de CORS al conectar frontend con backend"
-
-**Hermes workflow:**
-1. `remember("NEXUS", "CORS error", "Frontend→Backend connection", "Add CORSMiddleware to FastAPI")`
-2. Next time `route_task("frontend backend connection")` will include this lesson in context
-
-## File Locations
-
-- **Bridge module:** `~/tmp/Agentes-Maestros-/hermes_bridge.py`
-- **Neural Fellowship core:** `~/tmp/Agentes-Maestros-/neural_fellowship.py`
-- **Agent directory:** `~/tmp/Agentes-Maestros-/agent_directory.json`
-- **Lessons DB:** `~/tmp/Agentes-Maestros-/references/learned_lessons.json`
-- **Memory index:** `~/tmp/Agentes-Maestros-/references/memory_index.json`
-
-## Agent Architecture
-
-The Neural Fellowship system consists of:
-
-- **63 Maestros** (domain nodes): NEXUS, ARCAN, AGENCY, ORION, AURUM, SENTINEL, MERIDIAN, HELIOS, CRONUS, MNEMOS, etc.
-- **85 Especialistas** (leaf nodes): engineering-frontend-developer, marketing-seo-specialist, etc.
-- **Orquestador**: Routes tasks to optimal agents using keyword scoring
-- **AutoExecutor**: Safely executes mechanical tasks (file ops, git, pip, npm)
-- **MemorySystem**: Graph-based knowledge storage with connections and tags
-- **LearningSystem**: Error recording with pre-execution checklists
-
-## Auto-Executable Patterns
-
-The AutoExecutor recognizes these patterns:
-
-| Pattern | Action |
-|---------|--------|
-| `crear carpeta/directorio X` | mkdir |
-| `crear archivo X` | touch |
-| `crear archivo md X` | create_md |
-| `copiar X a Y` | cp |
-| `mover X a Y` | mv |
-| `eliminar archivo/carpeta X` | rm |
-| `git commit MSG` | git_commit |
-| `git push` / `git pull` | git_push/pull |
-| `pip install PKG` | pip_install |
-| `npm install PKG` | npm_install |
-| `ejecutar CMD` | run_cmd (restricted) |
-
-## Troubleshooting
-
-**Issue:** `ModuleNotFoundError: No module named 'neural_fellowship'`
-**Fix:** The bridge adds `~/tmp/Agentes-Maestros-` to sys.path automatically.
-
-**Issue:** Lessons not persisting
-**Fix:** Check write permissions on `~/tmp/Agentes-Maestros-/references/`
-
-**Issue:** Route returns PHOENIX (default)
-**Fix:** Task description is too generic; add domain-specific keywords (design, code, research, etc.)
-
-## CLI Testing
-
-Test the bridge directly from terminal:
+## Comandos CLI
 
 ```bash
-cd ~/tmp/Agentes-Maestros-
+# Route
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py route "crear API REST"
 
-python3 hermes_bridge.py route -d "Crear API REST con FastAPI"
-python3 hermes_bridge.py auto -d "crear carpeta ~/test-bridge" --dry-run
-python3 hermes_bridge.py remember -a NEXUS -e "CORS error" -c "Frontend connection" -s "Add CORSMiddleware"
-python3 hermes_bridge.py recall -a NEXUS
-python3 hermes_bridge.py status
-python3 hermes_bridge.py checklist -a NEXUS -d "Crear API REST"
-python3 hermes_bridge.py memory -q "cors"
+# Run (full flow)
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py run "pip install fastapi"
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py run "crear landing" --dry-run
+
+# Auto-execute
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py auto "crear carpeta ~/test"
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py auto "pip install fastapi" --dry-run
+
+# Remember
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py remember \
+  --agent NEXUS \
+  --error "ModuleNotFoundError" \
+  --context "FastAPI no instalado" \
+  --solution "pip install fastapi"
+
+# Recall
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py recall --agent NEXUS
+
+# Warnings
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py warnings --agent NEXUS
+
+# Checklist
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py checklist --agent NEXUS --task "deploy app"
+
+# Memory
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py memory --query "error timeout"
+
+# Status
+python3 ~/tmp/Agentes-Maestros-/hermes_bridge.py status
 ```
+
+## Componentes Neural Fellowship
+
+| Componente | Archivo | Función |
+|------------|---------|---------|
+| Routing | `neural_fellowship.py` (Orquestador) | Scoring keywords → agente óptimo |
+| Auto-Execute | `neural_fellowship.py` (AutoExecutor) | Ejecutar tareas mecánicas (whitelist) |
+| Memory | `neural_fellowship.py` (MemorySystem) | Grafo + lecciones + contexto |
+| Learning | `neural_fellowship.py` (LearningSystem) | Errores → checklists |
+| Orchestrator | `neural_fellowship.py` (Orchestrator) | Estado compartido entre agentes |
+| Detector | `neural_fellowship.py` (DetectorTareas) | Escanear tareas pendientes |
+| Bridge | `hermes_bridge.py` | API para Hermes Agent |
+
+## Reglas
+
+1. **Siempre route antes de ejecutar** — no adivinar el agente
+2. **Consultar lecciones** antes de tareas similares (recall_lessons)
+3. **Registrar errores** después de resolverlos (remember)
+4. **Automatizar lo mecánico** — AutoExecutor para mkdir, git, pip, etc.
+5. **Delegar lo complejo** — delegate_task para tareas que requieren IA
+6. **Verificar estado** — get_system_status para monitoreo
