@@ -1,115 +1,85 @@
-# Neural Fellowship — Red Neuronal de Agentes Autónomos
+# Agente Maestros — Neural Fellowship
 
-Sistema de orquestación multi-agente: **63 agentes maestros** + **243 agentes especializados** + routing engine + auto-executor + detector de tareas.
+> Sistema neuronal de agentes autónomos: 63 maestros + 85 especialistas con routing inteligente, memoria compartida y aprendizaje de errores.
 
-## Estructura
+## 🧠 Arquitectura
 
 ```
-neural_fellowship.py   → Sistema completo (toda la lógica)
+Tarea → Orquestador (routing scoring) → Maestro → Especialista
+                                    ↓
+                              Automatizable? → AutoExecutor
+                              Requiere IA?    → QueueManager (cola Hermes)
+                              
+Memoria: Grafo de conexiones + Lecciones + Contexto por agente
+Aprendizaje: Registro de errores → Checklists pre-ejecución
+Orquestador: Estado compartido + delegación entre agentes
 ```
 
-## Uso
+## 📊 Estado Actual
+
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| Orquestador (routing) | ✅ Consolidado | Scoring mejorado, 63 maestros |
+| AutoExecutor | ✅ Consolidado | Whitelist de comandos seguros |
+| Memory System | ✅ Consolidado | Grafo + lecciones + contexto |
+| Learning System | ✅ Consolidado | Checklists pre-ejecución |
+| Orchestrator | ✅ Consolidado | Estado compartido + delegación |
+| Detector de Tareas | ✅ Consolidado | Scans proyectos activos + TODAY |
+| Queue Manager | ✅ Consolidado | Cola persistente en JSON |
+
+## 🔧 Consolidación Realizada
+
+1. **4 archivos de routing → 1** (`neural_fellowship.py`)
+   - `orchestrator.py` → clase `Orchestrator` dentro del archivo principal
+   - `routing_engine.py` → clase `Orquestador` dentro del archivo principal  
+   - `memory_system.py` → clase `MemorySystem` dentro del archivo principal
+   - `learning_system.py` → clase `LearningSystem` dentro del archivo principal
+
+2. **Typo fix**: `capcidades` → `capacidades` en `agent_directory.json`
+
+3. **Seguridad**: `AutoExecutor` ahora usa whitelist de comandos + validación de paths
+
+4. **Paths**: De `/data/data/com.termux/files/home` a `Path.home()` portable
+
+5. **Requirements**: Agregado `requirements.txt` (stdlib only)
+
+## 🚀 Uso
 
 ```bash
-# Escanear ecosistema y generar propuestas
+# Ver estado general
 python3 neural_fellowship.py
 
-# Auto-ejecutar tareas mecánicas
-python3 neural_fellowship.py --auto
-
-# Ruta al agente correcto para una tarea
-python3 neural_fellowship.py --route "Necesito hacer una campaña de email marketing"
-
-# Listar 243 agentes especializados
+# Listar agentes
+python3 neural_fellowship.py --maestros
 python3 neural_fellowship.py --agents
 
-# Listar 63 agentes maestros
-python3 neural_fellowship.py --maestros
+# Ruta una tarea
+python3 neural_fellowship.py --route "crear componente React"
+
+# Escanear tareas pendientes
+python3 neural_fellowship.py --scan
+
+# Auto-ejecutar (dry-run)
+python3 neural_fellowship.py --auto
+
+# Estado del sistema
+python3 neural_fellowship.py --status
+
+# Buscar en memoria
+python3 neural_fellowship.py --memory "error timeout"
+
+# Registrar lección
+python3 neural_fellowship.py --lesson "AGENT:ERROR:CONTEXT:SOLUTION"
 ```
 
-## Arquitectura
+## 🗺️ Pendiente / Próxima Iteración
 
-```
-Tarea entrante
-      │
-      ▼
-┌─────────────────┐
-│   Orquestador   │  ← Routing Engine (keywords → maestro + especialista)
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    ▼         ▼
-┌────────┐ ┌────────────┐
-│Mecánica│ │  Requiere IA│
-└───┬────┘ └─────┬──────┘
-    │            │
-    ▼            ▼
-┌─────────┐ ┌──────────┐
-│Auto-Exec│ │Cola IA   │
-│(directo)│ │(agente)  │
-└─────────┘ └──────────┘
-```
+- [ ] Integración real con Hermes (`delegate_task`, `memory()`, `cronjob_manage`)
+- [ ] Tests automatizados
+- [ ] CI/CD para validar sintaxis
+- [ ] Interfaz web/monitor del sistema
+- [ ] Más especialistas (actual: 85, meta original: 243)
 
-## 63 Agentes Maestros
+## 📝 Changelog
 
-| Maestro | Dominio | División |
-|---------|---------|----------|
-| ARCAN | Creatividad | design |
-| ORION | Investigación | research + academic |
-| NEXUS | Desarrollo | engineering |
-| AURUM | Finanzas | finance |
-| SENTINEL | Seguridad | security |
-| MERIDIAN | Productividad | project-management + product |
-| AGENCY | Comercial | marketing + sales + paid-media |
-| HELIOS | Web/GIS | gis + spatial-computing |
-| CRONUS | Game Dev | game-development |
-| MNEMOS | Memoria/Salud | healthcare + specialized |
-| + 53 más... | | |
-
-## 243 Agentes Especializados
-
-Cada maestro contiene entre 3-15 especialistas con capacidades específicas. Ejemplos:
-
-- **NEXUS**: Frontend Developer, Backend Architect, AI Engineer, DevOps Automator, SRE, Prompt Engineer, RAG Pipeline Engineer...
-- **AGENCY**: SEO Specialist, Content Creator, Email Marketing Strategist, Growth Hacker, Proposal Strategist...
-- **SENTINEL**: Penetration Tester, AppSec Engineer, Security Architect, Compliance Auditor...
-- **ARCAN**: Brand Guardian, UI Designer, UX Architect, Image Prompt Engineer...
-
-## Detección Automática de Tareas
-
-El sistema escanea:
-- `~/knowledge/_projects/*.md` — Proyectos con sección `## Pendiente`
-- `~/knowledge/_active/*/task_plan.md` — Planes de tarea con `- [ ]`
-- `~/knowledge/TODAY.md` — Tareas diarias
-
-Genera propuestas con prioridad (alta/media/baja) y permite ejecución selectiva.
-
-## Auto-Executor
-
-Tareas mecánicas reconocidas:
-- `crear carpeta/directorio <path>` → `mkdir`
-- `crear archivo <path>` → `touch`
-- `instalar paquete <pkg>` → `pip install`
-- `copiar <src> a <dst>` → `cp`
-- `mover <src> a <dst>` → `mv`
-- `eliminar archivo <path>` → `rm`
-- `git commit <mensaje>` → `git add . && git commit`
-- `git push` → `git push`
-- `ejecutar <cmd>` → subprocess
-- `crear markdown <path>` → crear .md
-
-Las tareas que no coinciden con ningún patrón se encolan para un agente IA.
-
-## State & Queue
-
-- `executor_state.json` — Tareas ya ejecutadas (no se repiten)
-- `agent_queue.json` — Cola de tareas pendientes para agente
-- `executor-YYYYMMDD.log` — Log de ejecuciones
-
-## Integración con Hermes
-
-Este sistema es el backend de agentes del ecosistema Hermes Agent. El orchestrator de Hermes delega tareas a este sistema para ruteo y ejecución automática.
-
----
-
-**Licencia:** MIT
+- **2026-09-12**: Consolidación — 4 archivos de routing → 1. Fix typos. Seguridad + portabilidad.

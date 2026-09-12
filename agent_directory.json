@@ -92,7 +92,7 @@
     "engineering-llm-post-training-engineer": {"maestro": "NEXUS", "capacidades": ["sft", "dpo", "rlhf", "grpo"]},
     "engineering-multi-agent-systems-architect": {"maestro": "NEXUS", "capacidades": ["agent-topology", "context-management", "trust"]},
     "engineering-rapid-prototyper": {"maestro": "NEXUS", "capacidades": ["mvp", "proof-of-concept"]},
-    "engineering-privacy-engineer": {"maestro": "NEXUS", "capcidades": ["pii-discovery", "data-minimization", "dsar"]},
+    "engineering-privacy-engineer": {"maestro": "NEXUS", "capacidades": ["pii-discovery", "data-minimization", "dsar"]},
     "marketing-seo-specialist": {"maestro": "AGENCY", "capacidades": ["technical-seo", "content-optimization"]},
     "marketing-content-creator": {"maestro": "AGENCY", "capacidades": ["editorial-calendar", "copywriting"]},
     "marketing-email-marketing-strategist": {"maestro": "AGENCY", "capacidades": ["crm-campaigns", "lifecycle-automation"]},

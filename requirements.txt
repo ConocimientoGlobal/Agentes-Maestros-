@@ -1,0 +1,10 @@
+# Agentes Maestros — Sistema Neuronal
+# Dependencias requeridas (todas son stdlib de Python, pero se listan para claridad)
+
+# Python 3.8+
+# No hay dependencias externas — usa solo stdlib
+
+# Opcionales para desarrollo:
+# pytest>=7.0
+# black>=22.0
+# mypy>=1.0
