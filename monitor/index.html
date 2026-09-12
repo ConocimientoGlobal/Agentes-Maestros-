@@ -9,34 +9,44 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 :root {
   --bg: #0f172a; --surface: #1e293b; --surface2: #334155; --border: #475569;
-  --text: #f1f5f9; --text2: #94a3b8; --accent: #3b82f6; --red: #ef4444; --green: #22c55e;
+  --text: #f1f5f9; --text2: #94a3b8; --accent: #3b82f6; --red: #ef4444; --green: #22c55e; --yellow: #eab308;
 }
-body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding-bottom: 80px; }
 .header { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; }
 .header h1 { font-size: 17px; font-weight: 700; }
-.stats { display: flex; gap: 12px; margin-top: 10px; font-size: 11px; }
-.stat { background: var(--surface2); padding: 6px 12px; border-radius: 20px; }
-.stat-num { font-weight: 700; }
+.stats { display: flex; gap: 10px; margin-top: 8px; font-size: 11px; }
+.stat { background: var(--surface2); padding: 5px 10px; border-radius: 15px; }
+.back-btn { background: none; border: none; color: var(--accent); font-size: 14px; cursor: pointer; padding: 8px 0; margin-bottom: 8px; }
 .content { padding: 16px; }
-.section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 10px; margin-top: 16px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
+.section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin: 16px 0 10px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+.card:active { background: var(--surface2); }
 .card-top { display: flex; align-items: center; gap: 10px; }
-.checkbox { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
-.checkbox.checked { background: var(--red); border-color: var(--red); }
-.checkbox.checked::after { content: '✕'; color: white; font-size: 11px; font-weight: 700; }
+.checkbox { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.checkbox.checked { background: var(--accent); border-color: var(--accent); }
+.checkbox.checked::after { content: '✓'; color: white; font-size: 11px; }
 .card-text { flex: 1; font-size: 13px; line-height: 1.3; }
-.card-meta { font-size: 10px; color: var(--text2); margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.card-text.completed { text-decoration: line-through; color: var(--text2); }
+.card-meta { font-size: 10px; color: var(--text2); margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .tag { background: var(--surface2); padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
-.project-card { display: flex; align-items: center; gap: 10px; padding: 14px; border-radius: 12px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); }
-.project-icon { font-size: 22px; }
+.tag.auto { background: rgba(34,197,94,0.2); color: var(--green); }
+.tag.manual { background: rgba(234,179,8,0.2); color: var(--yellow); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.status-dot.done { background: var(--green); }
+.status-dot.pending { background: var(--yellow); }
+.project-card { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); }
+.project-card:active { background: var(--surface2); }
+.project-icon { font-size: 28px; }
 .project-info { flex: 1; }
-.project-name { font-weight: 600; font-size: 14px; }
+.project-name { font-weight: 600; font-size: 15px; }
 .project-desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
-.project-count { font-size: 11px; color: var(--text2); margin-left: auto; padding: 4px 10px; background: var(--surface2); border-radius: 10px; }
-.fab { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--red); color: white; border: none; padding: 14px 28px; border-radius: 25px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 20px rgba(239,68,68,0.4); }
+.project-progress { width: 60px; text-align: right; }
+.project-progress-num { font-size: 16px; font-weight: 700; color: var(--accent); }
+.project-progress-label { font-size: 9px; color: var(--text2); }
+.fab { position: fixed; bottom: 20px; left: 16px; right: 16px; background: var(--red); color: white; border: none; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; opacity: 0.5; pointer-events: none; }
+.fab.active { opacity: 1; pointer-events: auto; }
 .fab:active { opacity: 0.8; }
-.fab:disabled { background: var(--surface2); color: var(--text2); box-shadow: none; }
-.empty { text-align: center; padding: 40px 20px; color: var(--text2); }
+.empty { text-align: center; padding: 40px 20px; color: var(--text2); font-size: 14px; }
 .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--surface2); color: var(--text); padding: 12px 24px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); opacity: 0; transition: opacity 0.3s; z-index: 1000; }
 .toast.show { opacity: 1; }
 </style>
@@ -45,18 +55,20 @@ body { font-family: -apple-system, sans-serif; background: var(--bg); color: var
 <div class="header">
   <h1>🧠 Neural Fellowship</h1>
   <div class="stats">
-    <div class="stat"><span class="stat-num" id="stat-total">0</span> tareas</div>
-    <div class="stat"><span class="stat-num" id="stat-projects">0</span> proyectos</div>
+    <div class="stat"><span id="stat-total">0</span> tareas</div>
+    <div class="stat"><span id="stat-projects">0</span> proyectos</div>
+    <div class="stat"><span id="stat-selected">0</span> seleccionadas</div>
   </div>
 </div>
 <div class="content" id="content"></div>
-<button class="fab" id="fab" disabled onclick="confirmDelete()">🗑️ Eliminar seleccionados (<span id="count">0</span>)</button>
+<button class="fab" id="fab" onclick="confirmDelete()">🗑️ Cancelar seleccionadas (<span id="fab-count">0</span>)</button>
 <div class="toast" id="toast"></div>
 
 <script>
 let tasks = [];
 let projects = [];
 let selected = new Set();
+let currentView = 'home'; // 'home' or projectName
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -74,7 +86,7 @@ async function load() {
     projects = sd.projects || [];
     render();
   } catch(e) {
-    document.getElementById('content').innerHTML = '<div class="empty">Error cargando</div>';
+    document.getElementById('content').innerHTML = '<div class="empty">Error cargando datos</div>';
   }
 }
 
@@ -82,31 +94,19 @@ function toggleTask(id) {
   if (selected.has(id)) selected.delete(id);
   else selected.add(id);
   updateFab();
-}
-
-function toggleProjectTasks(projectName) {
-  const projectTasks = tasks.filter(t => t.project === projectName);
-  const allSelected = projectTasks.every(t => selected.has(t.id));
-  
-  if (allSelected) {
-    projectTasks.forEach(t => selected.delete(t.id));
-  } else {
-    projectTasks.forEach(t => selected.add(t.id));
-  }
-  updateFab();
   render();
 }
 
 function updateFab() {
   const fab = document.getElementById('fab');
-  const count = document.getElementById('count');
+  const count = document.getElementById('fab-count');
   count.textContent = selected.size;
-  fab.disabled = selected.size === 0;
+  fab.classList.toggle('active', selected.size > 0);
 }
 
 function confirmDelete() {
   if (selected.size === 0) return;
-  if (confirm(`¿Eliminar ${selected.size} tarea(s)?`)) {
+  if (confirm(`¿Cancelar ${selected.size} tarea(s)?`)) {
     deleteSelected();
   }
 }
@@ -121,65 +121,161 @@ async function deleteSelected() {
     });
     selected.clear();
     updateFab();
-    showToast(`✅ ${ids.length} tarea(s) eliminada(s)`);
+    showToast(`✅ ${ids.length} tarea(s) cancelada(s)`);
     load();
   } catch(e) {
-    showToast('❌ Error eliminando');
+    showToast('❌ Error al cancelar');
   }
+}
+
+function openProject(name) {
+  currentView = name;
+  render();
+}
+
+function goHome() {
+  currentView = 'home';
+  render();
 }
 
 function render() {
   document.getElementById('stat-total').textContent = tasks.length;
   document.getElementById('stat-projects').textContent = projects.length;
+  document.getElementById('stat-selected').textContent = selected.size;
+  
   const c = document.getElementById('content');
   
-  if (tasks.length === 0 && projects.length === 0) {
-    c.innerHTML = '<div class="empty">🎉 No hay tareas pendientes</div>';
-    return;
+  if (currentView === 'home') {
+    renderHome(c);
+  } else {
+    renderProject(c, currentView);
   }
-  
+  updateFab();
+}
+
+function renderHome(c) {
   let html = '';
-  
-  // Tasks section
-  if (tasks.length > 0) {
-    html += '<div class="section-title">📋 Tareas pendientes</div>';
-    tasks.forEach(t => {
-      const isSelected = selected.has(t.id);
-      html += `<div class="card">
-        <div class="card-top">
-          <div class="checkbox ${isSelected ? 'checked' : ''}" onclick="toggleTask('${t.id}')"></div>
-          <div class="card-text">${t.texto}</div>
-        </div>
-        <div class="card-meta">
-          <span class="tag">${t.route.maestro.id}</span>
-          <span class="tag">${t.route.specialist.id || '—'}</span>
-          ${t.project ? `<span class="tag">📁 ${t.project}</span>` : ''}
-        </div>
-      </div>`;
-    });
-  }
   
   // Projects section
   if (projects.length > 0) {
     html += '<div class="section-title">📁 Proyectos</div>';
     projects.forEach(p => {
-      const projectTasks = tasks.filter(t => t.project === p.name);
-      const allSelected = projectTasks.length > 0 && projectTasks.every(t => selected.has(t.id));
+      const pTasks = tasks.filter(t => t.project === p.name);
+      const completed = p.completadas || 0;
+      const total = p.total || pTasks.length;
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+      const icon = getIcon(p.name);
       
-      html += `<div class="project-card">
-        <div class="checkbox ${allSelected ? 'checked' : ''}" onclick="toggleProjectTasks('${p.name.replace(/'/g, "\\'")}')"></div>
-        <div class="project-icon">${p.icon}</div>
+      html += `<div class="project-card" onclick="openProject('${p.name.replace(/'/g,"\\'")}')">
+        <div class="project-icon">${icon}</div>
         <div class="project-info">
           <div class="project-name">${p.name}</div>
-          <div class="project-desc">${p.total} tareas (${p.completadas} listas)</div>
+          <div class="project-desc">${total} tareas • ${completed} completadas</div>
         </div>
-        <div class="project-count">${projectTasks.filter(t => selected.has(t.id)).length}/${projectTasks.length}</div>
+        <div class="project-progress">
+          <div class="project-progress-num">${pct}%</div>
+          <div class="project-progress-label">${total - completed} pendientes</div>
+        </div>
       </div>`;
     });
   }
   
+  // Recent tasks
+  html += '<div class="section-title">📋 Todas las tareas pendientes</div>';
+  tasks.slice(0, 10).forEach(t => {
+    html += renderTaskCard(t);
+  });
+  
+  if (tasks.length > 10) {
+    html += `<div class="card" style="text-align:center;color:var(--text2)" onclick="showAllTasks()">
+      Ver todas (${tasks.length})
+    </div>`;
+  }
+  
+  if (tasks.length === 0 && projects.length === 0) {
+    html = '<div class="empty">🎉 No hay tareas pendientes</div>';
+  }
+  
   c.innerHTML = html;
-  updateFab();
+}
+
+function renderProject(c, projectName) {
+  const project = projects.find(p => p.name === projectName);
+  const projectTasks = tasks.filter(t => t.project === projectName);
+  
+  let html = `<button class="back-btn" onclick="goHome()">← Volver a proyectos</button>`;
+  
+  if (project) {
+    const completed = project.completadas || 0;
+    const total = project.total || projectTasks.length;
+    const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    html += `<div style="background:var(--surface);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">${getIcon(project.name)} ${project.name}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">${completed}/${total} completadas (${pct}%)</div>
+      <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:var(--accent);border-radius:4px"></div>
+      </div>
+    </div>`;
+  }
+  
+  html += `<div class="section-title">📋 Tareas del proyecto (${projectTasks.length})</div>`;
+  
+  projectTasks.forEach(t => {
+    html += renderTaskCard(t);
+  });
+  
+  if (projectTasks.length === 0) {
+    html += '<div class="empty">No hay tareas pendientes en este proyecto</div>';
+  }
+  
+  c.innerHTML = html;
+}
+
+function renderTaskCard(t) {
+  const isSelected = selected.has(t.id);
+  const isCompleted = t.completada;
+  const maestro = t.route?.maestro?.id || '—';
+  const specialist = t.route?.specialist?.id || '—';
+  const confidence = t.route?.maestro?.confidence || 0;
+  const auto = t.route?.automatizable;
+  
+  return `<div class="card">
+    <div class="card-top">
+      <div class="checkbox ${isSelected ? 'checked' : ''}" onclick="event.stopPropagation();toggleTask('${t.id}')"></div>
+      <div class="card-text ${isCompleted ? 'completed' : ''}">${t.texto}</div>
+    </div>
+    <div class="card-meta">
+      <span class="status-dot ${isCompleted ? 'done' : 'pending'}"></span>
+      <span class="tag">${maestro}</span>
+      <span class="tag">${specialist}</span>
+      <span class="tag ${auto ? 'auto' : 'manual'}">${auto ? '⚡Auto' : '🧠IA'}</span>
+      <span class="tag">${confidence}%</span>
+    </div>
+  </div>`;
+}
+
+function getIcon(name) {
+  const n = name.toLowerCase();
+  if (n.includes('pilates') || n.includes('yoga') || n.includes('health')) return '🧘';
+  if (n.includes('world') || n.includes('game') || n.includes('juego')) return '🎮';
+  if (n.includes('flowstate') || n.includes('agency') || n.includes('marketing')) return '📢';
+  if (n.includes('graphify') || n.includes('graph')) return '📈';
+  if (n.includes('huella') || n.includes('security') || n.includes('seguridad')) return '🛡️';
+  if (n.includes('agent') || n.includes('neural') || n.includes('fellowship')) return '🤖';
+  if (n.includes('hotel') || n.includes('travel')) return '🏨';
+  if (n.includes('restaurant') || n.includes('food') || n.includes('gourmet')) return '🍽️';
+  if (n.includes('pwa') || n.includes('app') || n.includes('mobile')) return '📱';
+  if (n.includes('web') || n.includes('landing') || n.includes('page')) return '🌐';
+  return '📁';
+}
+
+function showAllTasks() {
+  currentView = 'home';
+  const c = document.getElementById('content');
+  let html = '<div class="section-title">📋 Todas las tareas</div>';
+  tasks.forEach(t => { html += renderTaskCard(t); });
+  c.innerHTML = html;
 }
 
 load();
