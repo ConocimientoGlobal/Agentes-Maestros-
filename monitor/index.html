@@ -2,1160 +2,188 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0f172a">
-<title>🧠 Neural Fellowship — Monitor Interactivo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e293b">
+<title>🧠 Neural Fellowship</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 :root {
-  --bg: #0a0f1e; --bg2: #111827; --surface: #1a2332; --surface2: #243044; --surface3: #2d3e55;
-  --border: #374151; --border2: #4b5563;
-  --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
-  --accent: #3b82f6; --accent2: #60a5fa; --green: #22c55e; --red: #ef4444; --yellow: #eab308; --orange: #f97316; --purple: #a855f7; --cyan: #06b6d4;
-  --radius: 12px; --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --bg: #0f172a; --surface: #1e293b; --surface2: #334155; --border: #475569;
+  --text: #f1f5f9; --text2: #94a3b8; --accent: #3b82f6; --red: #ef4444; --green: #22c55e;
 }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
-  background: var(--bg); color: var(--text); min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* SIDEBAR */
-.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 199; opacity: 0; transition: opacity 0.25s; }
-.sidebar-overlay.show { display: block; opacity: 1; }
-.sidebar {
-  position: fixed; top: 0; left: 0; width: 280px; height: 100vh; z-index: 200;
-  background: var(--bg2); border-right: 1px solid var(--border);
-  transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.sidebar.open { transform: translateX(0); }
-.sidebar-header {
-  padding: 16px 20px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 12px;
-}
-.sidebar-header h2 { font-size: 16px; font-weight: 700; flex: 1; }
-.sidebar-close { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; padding: 4px; }
-.sidebar-stats {
-  padding: 12px 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
-  border-bottom: 1px solid var(--border);
-}
-.sidebar-stat { text-align: center; }
-.sidebar-stat-num { font-size: 18px; font-weight: 700; }
-.sidebar-stat-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
-.sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
-.nav-section { margin-bottom: 4px; }
-.nav-section-title {
-  padding: 8px 20px; font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1px; color: var(--text3); cursor: pointer; display: flex; align-items: center; gap: 8px;
-  user-select: none; transition: color 0.2s;
-}
-.nav-section-title:hover { color: var(--text2); }
-.nav-section-title .arrow { transition: transform 0.2s; font-size: 10px; }
-.nav-section-title .arrow.collapsed { transform: rotate(-90deg); }
-.nav-section-items { overflow: hidden; max-height: 500px; transition: max-height 0.3s; }
-.nav-section-items.collapsed { max-height: 0 !important; }
-.nav-item {
-  padding: 8px 20px 8px 32px; cursor: pointer; display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: var(--text2); transition: all 0.15s; border-left: 3px solid transparent;
-}
-.nav-item:hover { background: var(--surface); color: var(--text); }
-.nav-item.active { background: var(--surface); color: var(--accent); border-left-color: var(--accent); }
-.nav-item .count { margin-left: auto; background: var(--surface3); padding: 2px 8px; border-radius: 10px; font-size: 11px; color: var(--text3); }
-.sidebar-footer {
-  padding: 12px 20px; border-top: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3);
-}
-.sidebar-footer .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-
-/* MAIN LAYOUT */
-.main { margin-left: 0; transition: margin-left 0.3s; }
-.sidebar.open ~ .main { margin-left: 280px; }
-@media (max-width: 768px) {
-  .sidebar.open ~ .main { margin-left: 0; }
-}
-
-/* HEADER */
-.header {
-  position: sticky; top: 0; z-index: 100; background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 12px 20px; display: flex; align-items: center; gap: 12px;
-}
-.menu-btn { background: none; border: none; color: var(--text2); font-size: 22px; cursor: pointer; padding: 4px; }
-.header-title { font-size: 16px; font-weight: 700; flex: 1; }
-.header-actions { display: flex; gap: 8px; }
-.header-btn {
-  background: var(--surface); border: 1px solid var(--border); color: var(--text2);
-  padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; transition: all 0.2s;
-}
-.header-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
-.header-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
-.header-btn.primary:hover { background: var(--accent2); }
-
-/* TOOLBAR */
-.toolbar {
-  padding: 12px 20px; display: flex; gap: 8px; align-items: center;
-  border-bottom: 1px solid var(--border); background: var(--bg2); flex-wrap: wrap;
-}
-.search-box {
-  flex: 1; min-width: 180px; position: relative;
-}
-.search-box input {
-  width: 100%; padding: 9px 12px 9px 36px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text); font-size: 13px; outline: none; transition: border-color 0.2s;
-}
-.search-box input:focus { border-color: var(--accent); }
-.search-box .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; }
-.filter-select {
-  padding: 9px 12px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text); font-size: 13px; outline: none; cursor: pointer; min-width: 120px;
-}
-.filter-select:focus { border-color: var(--accent); }
-.selection-bar {
-  display: none; align-items: center; gap: 8px; padding: 8px 12px;
-  background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
-  border-radius: var(--radius-sm); font-size: 12px;
-}
-.selection-bar.show { display: flex; }
-.selection-bar button {
-  background: var(--surface2); border: none; color: var(--text); padding: 5px 10px;
-  border-radius: 4px; font-size: 11px; cursor: pointer; transition: all 0.15s;
-}
-.selection-bar button:hover { background: var(--surface3); }
-.selection-bar .danger { color: var(--red); }
-.selection-bar .danger:hover { background: rgba(239,68,68,0.2); }
-.selection-bar .success { color: var(--green); }
-.selection-bar .success:hover { background: rgba(34,197,94,0.2); }
-
-/* STATS BAR */
-.stats-bar {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 8px; padding: 12px 20px; background: var(--bg2);
-}
-.stat-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 10px 14px; text-align: center; transition: all 0.2s; cursor: default;
-}
-.stat-card:hover { border-color: var(--border2); transform: translateY(-1px); }
-.stat-card-num { font-size: 20px; font-weight: 700; }
-.stat-card-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-.stat-card.blue .stat-card-num { color: var(--accent); }
-.stat-card.green .stat-card-num { color: var(--green); }
-.stat-card.yellow .stat-card-num { color: var(--yellow); }
-.stat-card.red .stat-card-num { color: var(--red); }
-.stat-card.purple .stat-card-num { color: var(--purple); }
-.stat-card.cyan .stat-card-num { color: var(--cyan); }
-
-/* CONTENT */
-.content { padding: 16px 20px; }
-
-/* KANBAN BOARD */
-.kanban { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-.kanban-col {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  min-height: 300px; display: flex; flex-direction: column; transition: all 0.2s;
-}
-.kanban-col.drag-over { border-color: var(--accent); background: rgba(59,130,246,0.08); }
-.kanban-col-header {
-  padding: 12px 16px; display: flex; align-items: center; gap: 8px;
-  border-bottom: 1px solid var(--border); font-weight: 600; font-size: 13px;
-}
-.kanban-col-count {
-  background: var(--surface3); padding: 2px 8px; border-radius: 10px; font-size: 11px; color: var(--text2); margin-left: auto;
-}
-.kanban-col-body { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 100px; }
-
-/* TASK CARD */
-.task-card {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 12px; cursor: grab; transition: all 0.2s; position: relative;
-}
-.task-card:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-.task-card.dragging { opacity: 0.4; transform: scale(0.96); }
-.task-card.selected { border-color: var(--accent); background: rgba(59,130,246,0.08); box-shadow: 0 0 0 1px var(--accent); }
-.task-card-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-.task-checkbox {
-  width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;
-  transition: all 0.2s; margin-top: 1px;
-}
-.task-checkbox.checked { background: var(--green); border-color: var(--green); }
-.task-checkbox.checked::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
-.task-priority {
-  width: 4px; border-radius: 2px; align-self: stretch; min-height: 20px; flex-shrink: 0;
-}
-.task-priority.high { background: var(--red); } .task-priority.medium { background: var(--yellow); } .task-priority.low { background: var(--green); }
-.task-text {
-  font-size: 13px; line-height: 1.5; word-break: break-word; flex: 1;
-  min-height: 20px; outline: none; cursor: text;
-}
-.task-text:focus { background: rgba(59,130,246,0.1); border-radius: 4px; padding: 2px 4px; margin: -2px -4px; }
-.task-text[contenteditable="true"]:empty::before { content: 'Escribir...'; color: var(--text3); }
-.task-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
-.task-tag {
-  background: var(--surface3); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
-  color: var(--text2); white-space: nowrap;
-}
-.task-tag.maestro { background: rgba(59,130,246,0.15); color: var(--accent2); }
-.task-tag.proyecto { background: rgba(168,85,247,0.15); color: var(--purple); }
-.task-tag.auto { background: rgba(34,197,94,0.15); color: var(--green); }
-.task-tag.ia { background: rgba(168,85,247,0.15); color: var(--purple); }
-.task-actions { position: absolute; top: 8px; right: 8px; display: none; gap: 4px; }
-.task-card:hover .task-actions { display: flex; }
-.task-action-btn {
-  width: 26px; height: 26px; border-radius: 4px; background: var(--surface2);
-  border: none; color: var(--text3); cursor: pointer; font-size: 12px; display: flex;
-  align-items: center; justify-content: center; transition: all 0.15s;
-}
-.task-action-btn:hover { background: var(--surface3); color: var(--text); }
-.task-action-btn.danger:hover { background: rgba(239,68,68,0.2); color: var(--red); }
-
-/* TRANSFER DROPDOWN */
-.transfer-dropdown {
-  position: absolute; top: 32px; right: 0; background: var(--surface2);
-  border: 1px solid var(--border); border-radius: var(--radius-sm); z-index: 50;
-  min-width: 160px; box-shadow: var(--shadow); display: none; padding: 4px;
-}
-.transfer-dropdown.show { display: block; }
-.transfer-option {
-  padding: 6px 10px; font-size: 12px; color: var(--text2); cursor: pointer;
-  border-radius: 4px; transition: all 0.15s;
-}
-.transfer-option:hover { background: var(--surface3); color: var(--text); }
-
-/* MODAL */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300;
-  display: none; align-items: center; justify-content: center; padding: 20px;
-  backdrop-filter: blur(4px);
-}
-.modal-overlay.show { display: flex; }
-.modal {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
-  width: 100%; max-width: 480px; box-shadow: var(--shadow);
-  animation: modalIn 0.25s cubic-bezier(0.4,0,0.2,1);
-}
-@keyframes modalIn { from { opacity: 0; transform: scale(0.92) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-.modal-header h3 { font-size: 16px; font-weight: 700; flex: 1; }
-.modal-close { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 4px; }
-.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-.modal-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-.modal-field input, .modal-field textarea, .modal-field select {
-  width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text); font-size: 14px; outline: none; transition: border-color 0.2s;
-}
-.modal-field textarea { min-height: 80px; resize: vertical; }
-.modal-field input:focus, .modal-field textarea:focus, .modal-field select:focus { border-color: var(--accent); }
-.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
-.btn {
-  padding: 9px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
-  cursor: pointer; border: none; transition: all 0.2s;
-}
-.btn-primary { background: var(--accent); color: white; }
-.btn-primary:hover { background: var(--accent2); }
-.btn-secondary { background: var(--surface2); color: var(--text); }
-.btn-secondary:hover { background: var(--surface3); }
-.btn-danger { background: rgba(239,68,68,0.15); color: var(--red); }
-.btn-danger:hover { background: rgba(239,68,68,0.25); }
-
-/* PRIORITY SELECTOR */
-.priority-selector { display: flex; gap: 8px; }
-.priority-option {
-  flex: 1; padding: 8px; text-align: center; border-radius: var(--radius-sm); cursor: pointer;
-  border: 2px solid var(--border); font-size: 12px; font-weight: 600; transition: all 0.2s;
-}
-.priority-option:hover { border-color: var(--border2); }
-.priority-option.selected.low { border-color: var(--green); background: rgba(34,197,94,0.1); color: var(--green); }
-.priority-option.selected.medium { border-color: var(--yellow); background: rgba(234,179,8,0.1); color: var(--yellow); }
-.priority-option.selected.high { border-color: var(--red); background: rgba(239,68,68,0.1); color: var(--red); }
-
-/* VIEW TOGGLE */
-.view-toggle { display: flex; background: var(--surface); border-radius: var(--radius-sm); padding: 3px; }
-.view-toggle button {
-  padding: 6px 12px; border-radius: 6px; border: none; background: transparent;
-  color: var(--text3); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-}
-.view-toggle button.active { background: var(--surface2); color: var(--text); }
-
-/* LIST VIEW */
-.task-list { display: flex; flex-direction: column; gap: 6px; }
-.task-list .task-card { display: flex; align-items: center; gap: 12px; }
-.task-list .task-card-header { margin-bottom: 0; flex: 1; }
-.task-list .task-meta { margin-top: 0; }
-
-/* TOAST */
-.toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
-.toast {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 12px 20px; font-size: 13px; color: var(--text); box-shadow: var(--shadow);
-  animation: toastIn 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; align-items: center; gap: 8px;
-  max-width: 360px;
-}
-.toast.out { animation: toastOut 0.3s forwards; }
-@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes toastOut { to { opacity: 0; transform: translateX(40px); } }
-.toast.success { border-left: 3px solid var(--green); }
-.toast.error { border-left: 3px solid var(--red); }
-.toast.info { border-left: 3px solid var(--accent); }
-
-/* SCROLLBAR */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border2); }
-
-/* EMPTY STATE */
-.empty-state {
-  text-align: center; padding: 40px 20px; color: var(--text3);
-}
-.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-.empty-state .msg { font-size: 14px; }
-
-/* ANIMATIONS */
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.task-card { animation: fadeIn 0.2s; }
-
-/* RESPONSIVE */
-@media (max-width: 640px) {
-  .sidebar { width: 85vw; }
-  .toolbar { padding: 10px 12px; }
-  .content { padding: 12px; }
-  .stats-bar { grid-template-columns: 1fr 1fr; padding: 10px 12px; }
-  .header { padding: 10px 12px; }
-  .header-title { font-size: 14px; }
-}
+body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
+.header { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; }
+.header h1 { font-size: 17px; font-weight: 700; }
+.stats { display: flex; gap: 12px; margin-top: 10px; font-size: 11px; }
+.stat { background: var(--surface2); padding: 6px 12px; border-radius: 20px; }
+.stat-num { font-weight: 700; }
+.content { padding: 16px; }
+.section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 10px; margin-top: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 8px; }
+.card-top { display: flex; align-items: center; gap: 10px; }
+.checkbox { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
+.checkbox.checked { background: var(--red); border-color: var(--red); }
+.checkbox.checked::after { content: '✕'; color: white; font-size: 11px; font-weight: 700; }
+.card-text { flex: 1; font-size: 13px; line-height: 1.3; }
+.card-meta { font-size: 10px; color: var(--text2); margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { background: var(--surface2); padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: 600; }
+.project-card { display: flex; align-items: center; gap: 10px; padding: 14px; border-radius: 12px; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--border); }
+.project-icon { font-size: 22px; }
+.project-info { flex: 1; }
+.project-name { font-weight: 600; font-size: 14px; }
+.project-desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.project-count { font-size: 11px; color: var(--text2); margin-left: auto; padding: 4px 10px; background: var(--surface2); border-radius: 10px; }
+.fab { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--red); color: white; border: none; padding: 14px 28px; border-radius: 25px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 20px rgba(239,68,68,0.4); }
+.fab:active { opacity: 0.8; }
+.fab:disabled { background: var(--surface2); color: var(--text2); box-shadow: none; }
+.empty { text-align: center; padding: 40px 20px; color: var(--text2); }
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--surface2); color: var(--text); padding: 12px 24px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); opacity: 0; transition: opacity 0.3s; z-index: 1000; }
+.toast.show { opacity: 1; }
 </style>
 </head>
 <body>
-
-<!-- SIDEBAR OVERLAY -->
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-<!-- SIDEBAR -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <h2>🧠 Neural Fellowship</h2>
-    <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
-  </div>
-  <div class="sidebar-stats" id="sidebar-stats">
-    <div class="sidebar-stat"><div class="sidebar-stat-num" id="ss-todo">0</div><div class="sidebar-stat-label">Por hacer</div></div>
-    <div class="sidebar-stat"><div class="sidebar-stat-num" id="ss-prog">0</div><div class="sidebar-stat-label">En progreso</div></div>
-    <div class="sidebar-stat"><div class="sidebar-stat-num" id="ss-done">0</div><div class="sidebar-stat-label">Completadas</div></div>
-  </div>
-  <nav class="sidebar-nav" id="sidebar-nav">
-    <div class="nav-section">
-      <div class="nav-section-title" onclick="toggleNavSection(this)">
-        <span class="arrow">▼</span> 📁 Proyectos
-      </div>
-      <div class="nav-section-items" id="nav-projects"></div>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-title" onclick="toggleNavSection(this)">
-        <span class="arrow">▼</span> 🤖 Agentes
-      </div>
-      <div class="nav-section-items" id="nav-agents"></div>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-title" onclick="toggleNavSection(this)">
-        <span class="arrow">▼</span> 📊 Vistas
-      </div>
-      <div class="nav-section-items">
-        <div class="nav-item active" data-view="kanban" onclick="setView('kanban')">
-          <span>📋</span> Kanban
-        </div>
-        <div class="nav-item" data-view="list" onclick="setView('list')">
-          <span>📝</span> Lista
-        </div>
-        <div class="nav-item" data-view="stats" onclick="setView('stats')">
-          <span>📈</span> Estadísticas
-        </div>
-      </div>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-title" onclick="toggleNavSection(this)">
-        <span class="arrow">▼</span> ⚡ Tipo
-      </div>
-      <div class="nav-section-items" id="nav-types">
-        <div class="nav-item" data-filter="auto" onclick="filterByType('auto')">
-          <span>⚡</span> Auto-ejecutables
-        </div>
-        <div class="nav-item" data-filter="ia" onclick="filterByType('ia')">
-          <span>🧠</span> Requieren IA
-        </div>
-        <div class="nav-item" data-filter="all" onclick="filterByType('all')">
-          <span>📋</span> Todas
-        </div>
-      </div>
-    </div>
-  </nav>
-  <div class="sidebar-footer">
-    <span class="dot"></span> <span id="sidebar-status">Conectado</span>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<div class="main">
-  <!-- HEADER -->
-  <header class="header">
-    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-    <span class="header-title" id="header-title">📋 Kanban</span>
-    <div class="header-actions">
-      <div class="view-toggle" id="view-toggle">
-        <button class="active" data-view="kanban" onclick="setView('kanban')">Kanban</button>
-        <button data-view="list" onclick="setView('list')">Lista</button>
-      </div>
-      <button class="header-btn primary" onclick="openCreateModal()">+ Nueva</button>
-    </div>
-  </header>
-
-  <!-- TOOLBAR -->
-  <div class="toolbar">
-    <div class="search-box">
-      <span class="icon">🔍</span>
-      <input type="text" id="search-input" placeholder="Buscar tareas..." oninput="applyFilters()">
-    </div>
-    <select class="filter-select" id="filter-agent" onchange="applyFilters()">
-      <option value="">Todos los agentes</option>
-    </select>
-    <select class="filter-select" id="filter-project" onchange="applyFilters()">
-      <option value="">Todos los proyectos</option>
-    </select>
-    <select class="filter-select" id="filter-priority" onchange="applyFilters()">
-      <option value="">Todas las prioridades</option>
-      <option value="high">🔴 Alta</option>
-      <option value="medium">🟡 Media</option>
-      <option value="low">🟢 Baja</option>
-    </select>
-    <div class="selection-bar" id="selection-bar">
-      <span id="sel-count">0</span> seleccionadas
-      <button class="success" onclick="bulkComplete()">✓ Completar</button>
-      <button onclick="bulkTransfer()">↗ Transferir</button>
-      <button onclick="bulkPriority()">⚡ Prioridad</button>
-      <button class="danger" onclick="bulkDelete()">🗑 Eliminar</button>
-      <button onclick="clearSelection()">✕</button>
-    </div>
-  </div>
-
-  <!-- STATS BAR -->
-  <div class="stats-bar" id="stats-bar">
-    <div class="stat-card blue"><div class="stat-card-num" id="stat-total">0</div><div class="stat-card-label">Total</div></div>
-    <div class="stat-card yellow"><div class="stat-card-num" id="stat-todo">0</div><div class="stat-card-label">Por hacer</div></div>
-    <div class="stat-card purple"><div class="stat-card-num" id="stat-prog">0</div><div class="stat-card-label">En progreso</div></div>
-    <div class="stat-card green"><div class="stat-card-num" id="stat-done">0</div><div class="stat-card-label">Completadas</div></div>
-    <div class="stat-card red"><div class="stat-card-num" id="stat-high">0</div><div class="stat-card-label">Prioridad Alta</div></div>
-    <div class="stat-card cyan"><div class="stat-card-num" id="stat-auto">0</div><div class="stat-card-label">Auto-ejecutables</div></div>
-  </div>
-
-  <!-- CONTENT -->
-  <div class="content" id="main-content">
-    <!-- KANBAN -->
-    <div class="kanban" id="kanban-view">
-      <div class="kanban-col" data-status="todo">
-        <div class="kanban-col-header"><span>📋</span> Por hacer <span class="kanban-col-count" id="count-todo">0</span></div>
-        <div class="kanban-col-body" id="col-todo"></div>
-      </div>
-      <div class="kanban-col" data-status="progress">
-        <div class="kanban-col-header"><span>⏳</span> En progreso <span class="kanban-col-count" id="count-progress">0</span></div>
-        <div class="kanban-col-body" id="col-progress"></div>
-      </div>
-      <div class="kanban-col" data-status="done">
-        <div class="kanban-col-header"><span>✅</span> Completadas <span class="kanban-col-count" id="count-done">0</span></div>
-        <div class="kanban-col-body" id="col-done"></div>
-      </div>
-    </div>
-    <!-- LIST -->
-    <div class="task-list" id="list-view" style="display:none"></div>
-    <!-- STATS -->
-    <div id="stats-view" style="display:none; text-align:center; padding:40px; color:var(--text3);">
-      <div class="icon" style="font-size:48px; margin-bottom:16px;">📈</div>
-      <p>Estadísticas detalladas disponibles próximamente</p>
-      <div id="stats-detail" style="margin-top:20px;"></div>
-    </div>
+<div class="header">
+  <h1>🧠 Neural Fellowship</h1>
+  <div class="stats">
+    <div class="stat"><span class="stat-num" id="stat-total">0</span> tareas</div>
+    <div class="stat"><span class="stat-num" id="stat-projects">0</span> proyectos</div>
   </div>
 </div>
-
-<!-- CREATE MODAL -->
-<div class="modal-overlay" id="create-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>✨ Nueva Tarea</h3>
-      <button class="modal-close" onclick="closeCreateModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-field">
-        <label>Descripción</label>
-        <textarea id="new-task-text" placeholder="Describe la tarea..." autofocus></textarea>
-      </div>
-      <div class="modal-field">
-        <label>Agente / Maestro</label>
-        <select id="new-task-agent"></select>
-      </div>
-      <div class="modal-field">
-        <label>Proyecto</label>
-        <select id="new-task-project"></select>
-      </div>
-      <div class="modal-field">
-        <label>Tipo</label>
-        <select id="new-task-type">
-          <option value="auto">⚡ Auto-ejecutable</option>
-          <option value="ia">🧠 Requiere IA</option>
-          <option value="manual">👤 Manual</option>
-        </select>
-      </div>
-      <div class="modal-field">
-        <label>Prioridad</label>
-        <div class="priority-selector">
-          <div class="priority-option selected low" data-priority="low" onclick="selectPriority(this)">🟢 Baja</div>
-          <div class="priority-option medium" data-priority="medium" onclick="selectPriority(this)">🟡 Media</div>
-          <div class="priority-option high" data-priority="high" onclick="selectPriority(this)">🔴 Alta</div>
-        </div>
-      </div>
-      <div class="modal-field">
-        <label>Estado inicial</label>
-        <select id="new-task-status">
-          <option value="todo">📋 Por hacer</option>
-          <option value="progress">⏳ En progreso</option>
-          <option value="done">✅ Completada</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeCreateModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="createTask()">Crear Tarea</button>
-    </div>
-  </div>
-</div>
-
-<!-- TRANSFER MODAL -->
-<div class="modal-overlay" id="transfer-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>↗ Transferir Tareas</h3>
-      <button class="modal-close" onclick="closeTransferModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-field">
-        <label>Transferir al Agente</label>
-        <select id="transfer-agent"></select>
-      </div>
-      <div class="modal-field">
-        <label>Al Proyecto</label>
-        <select id="transfer-project"></select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeTransferModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmTransfer()">Transferir</button>
-    </div>
-  </div>
-</div>
-
-<!-- PRIORITY MODAL -->
-<div class="modal-overlay" id="priority-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>⚡ Cambiar Prioridad</h3>
-      <button class="modal-close" onclick="closePriorityModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-field">
-        <label>Nueva Prioridad</label>
-        <div class="priority-selector">
-          <div class="priority-option low" data-priority="low" onclick="selectModalPriority(this)">🟢 Baja</div>
-          <div class="priority-option medium" data-priority="medium" onclick="selectModalPriority(this)">🟡 Media</div>
-          <div class="priority-option high" data-priority="high" onclick="selectModalPriority(this)">🔴 Alta</div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closePriorityModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmBulkPriority()">Aplicar</button>
-    </div>
-  </div>
-</div>
-
-<!-- TOAST CONTAINER -->
-<div class="toast-container" id="toast-container"></div>
+<div class="content" id="content"></div>
+<button class="fab" id="fab" disabled onclick="confirmDelete()">🗑️ Eliminar seleccionados (<span id="count">0</span>)</button>
+<div class="toast" id="toast"></div>
 
 <script>
-// === STATE ===
-const STORAGE_KEY = 'nf-tasks-v2';
-const SETTINGS_KEY = 'nf-settings';
 let tasks = [];
-let agents = [];
 let projects = [];
-let selectedIds = new Set();
-let currentView = 'kanban';
-let currentFilter = { search: '', agent: '', project: '', priority: '', type: 'all' };
-let draggingTask = null;
-let modalPriority = 'low';
+let selected = new Set();
 
-// === INIT ===
-function init() {
-  loadTasks();
-  loadSettings();
-  renderAll();
-  loadDataFromAPI();
-  setInterval(loadDataFromAPI, 30000);
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-function loadTasks() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try { tasks = JSON.parse(stored); } catch(e) { tasks = []; }
-  }
-  if (tasks.length === 0) {
-    tasks = generateSampleTasks();
-    saveTasks();
-  }
-  // Extract agents and projects from tasks
-  agents = [...new Set(tasks.map(t => t.agent).filter(Boolean))];
-  projects = [...new Set(tasks.map(t => t.project).filter(Boolean))];
-}
-
-function loadSettings() {
-  const s = localStorage.getItem(SETTINGS_KEY);
-  if (s) {
-    try {
-      const parsed = JSON.parse(s);
-      if (parsed.view) currentView = parsed.view;
-    } catch(e) {}
-  }
-}
-
-function saveSettings() {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify({ view: currentView }));
-}
-
-function saveTasks() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  agents = [...new Set(tasks.map(t => t.agent).filter(Boolean))];
-  projects = [...new Set(tasks.map(t => t.project).filter(Boolean))];
-  renderAll();
-}
-
-function generateSampleTasks() {
-  return [
-    { id: uid(), text: 'Configurar pipeline CI/CD para el proyecto principal', agent: 'devops-master', project: 'Infraestructura', type: 'auto', priority: 'high', status: 'todo', createdAt: Date.now() },
-    { id: uid(), text: 'Optimizar queries de base de datos', agent: 'data-master', project: 'Backend', type: 'ia', priority: 'medium', status: 'progress', createdAt: Date.now() - 100000 },
-    { id: uid(), text: 'Diseñar mockups para landing page', agent: 'design-master', project: 'Marketing', type: 'ia', priority: 'low', status: 'todo', createdAt: Date.now() - 200000 },
-    { id: uid(), text: 'Revisar seguridad del API gateway', agent: 'security-master', project: 'Infraestructura', type: 'auto', priority: 'high', status: 'todo', createdAt: Date.now() - 300000 },
-    { id: uid(), text: 'Generar reporte de analytics mensual', agent: 'data-master', project: 'Marketing', type: 'auto', priority: 'medium', status: 'progress', createdAt: Date.now() - 400000 },
-    { id: uid(), text: 'Actualizar documentación técnica', agent: 'docs-master', project: 'Backend', type: 'manual', priority: 'low', status: 'done', createdAt: Date.now() - 500000 },
-    { id: uid(), text: 'Implementar OAuth2 en microservicios', agent: 'backend-master', project: 'Backend', type: 'ia', priority: 'high', status: 'todo', createdAt: Date.now() - 600000 },
-    { id: uid(), text: 'Configurar monitoreo con Grafana', agent: 'devops-master', project: 'Infraestructura', type: 'auto', priority: 'medium', status: 'done', createdAt: Date.now() - 700000 },
-  ];
-}
-
-function uid() { return 't_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
-
-// === API ===
-async function loadDataFromAPI() {
+async function load() {
   try {
-    const res = await fetch('/api/tasks');
-    const data = await res.json();
-    if (data && data.tasks && data.tasks.length > 0) {
-      // Merge API tasks without duplicating existing ones
-      const existingTexts = new Set(tasks.map(t => t.text));
-      const newTasks = data.tasks.filter(t => !existingTexts.has(t.text));
-      if (newTasks.length > 0) {
-        newTasks.forEach(t => {
-          tasks.push({
-            id: uid(),
-            text: t.texto,
-            agent: t.route?.maestro?.id || 'sin-asignar',
-            project: t.fuente?.split('/').pop() || 'General',
-            type: t.route?.automatizable ? 'auto' : 'ia',
-            priority: t.route?.maestro?.confidence > 80 ? 'high' : 'medium',
-            status: 'todo',
-            createdAt: Date.now()
-          });
-        });
-        saveTasks();
-        showToast(`${newTasks.length} tarea(s) nuevas desde API`, 'info');
-      }
-    }
-    document.getElementById('sidebar-status').textContent = 'Conectado';
+    const [td, sd] = await Promise.all([
+      fetch('/api/tasks').then(r => r.json()),
+      fetch('/api/status').then(r => r.json())
+    ]);
+    tasks = td.tasks || [];
+    projects = sd.projects || [];
+    render();
   } catch(e) {
-    document.getElementById('sidebar-status').textContent = 'Sin conexión';
+    document.getElementById('content').innerHTML = '<div class="empty">Error cargando</div>';
   }
 }
 
-async function apiPost(endpoint, body) {
+function toggleTask(id) {
+  if (selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  updateFab();
+}
+
+function toggleProjectTasks(projectName) {
+  const projectTasks = tasks.filter(t => t.project === projectName);
+  const allSelected = projectTasks.every(t => selected.has(t.id));
+  
+  if (allSelected) {
+    projectTasks.forEach(t => selected.delete(t.id));
+  } else {
+    projectTasks.forEach(t => selected.add(t.id));
+  }
+  updateFab();
+  render();
+}
+
+function updateFab() {
+  const fab = document.getElementById('fab');
+  const count = document.getElementById('count');
+  count.textContent = selected.size;
+  fab.disabled = selected.size === 0;
+}
+
+function confirmDelete() {
+  if (selected.size === 0) return;
+  if (confirm(`¿Eliminar ${selected.size} tarea(s)?`)) {
+    deleteSelected();
+  }
+}
+
+async function deleteSelected() {
+  const ids = [...selected];
   try {
-    const res = await fetch(endpoint, {
+    await fetch('/api/tasks/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ids})
     });
-    return await res.json();
+    selected.clear();
+    updateFab();
+    showToast(`✅ ${ids.length} tarea(s) eliminada(s)`);
+    load();
   } catch(e) {
-    return { error: e.message };
+    showToast('❌ Error eliminando');
   }
 }
 
-// === RENDERING ===
-function renderAll() {
-  renderStats();
-  renderKanban();
-  renderList();
-  renderSidebar();
-  renderFilters();
-}
-
-function renderStats() {
-  const todo = tasks.filter(t => t.status === 'todo').length;
-  const prog = tasks.filter(t => t.status === 'progress').length;
-  const done = tasks.filter(t => t.status === 'done').length;
-  const high = tasks.filter(t => t.priority === 'high').length;
-  const auto = tasks.filter(t => t.type === 'auto').length;
-
+function render() {
   document.getElementById('stat-total').textContent = tasks.length;
-  document.getElementById('stat-todo').textContent = todo;
-  document.getElementById('stat-prog').textContent = prog;
-  document.getElementById('stat-done').textContent = done;
-  document.getElementById('stat-high').textContent = high;
-  document.getElementById('stat-auto').textContent = auto;
-
-  document.getElementById('ss-todo').textContent = todo;
-  document.getElementById('ss-prog').textContent = prog;
-  document.getElementById('ss-done').textContent = done;
-
-  document.getElementById('count-todo').textContent = todo;
-  document.getElementById('count-progress').textContent = prog;
-  document.getElementById('count-done').textContent = done;
-}
-
-function getFilteredTasks() {
-  return tasks.filter(t => {
-    if (currentFilter.search && !t.text.toLowerCase().includes(currentFilter.search.toLowerCase())) return false;
-    if (currentFilter.agent && t.agent !== currentFilter.agent) return false;
-    if (currentFilter.project && t.project !== currentFilter.project) return false;
-    if (currentFilter.priority && t.priority !== currentFilter.priority) return false;
-    if (currentFilter.type !== 'all' && currentFilter.type !== '' && t.type !== currentFilter.type) return false;
-    return true;
-  });
-}
-
-function renderKanban() {
-  const filtered = getFilteredTasks();
-  const cols = { todo: [], progress: [], done: [] };
-  filtered.forEach(t => { if (cols[t.status]) cols[t.status].push(t); });
-
-  ['todo', 'progress', 'done'].forEach(status => {
-    const col = document.getElementById('col-' + status);
-    if (cols[status].length === 0) {
-      col.innerHTML = '<div class="empty-state"><div class="msg">Sin tareas</div></div>';
-    } else {
-      col.innerHTML = cols[status].map(t => taskCardHTML(t)).join('');
-    }
-  });
-}
-
-function renderList() {
-  const filtered = getFilteredTasks();
-  const list = document.getElementById('list-view');
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-state"><div class="icon">📭</div><div class="msg">No hay tareas</div></div>';
-  } else {
-    list.innerHTML = filtered.map(t => taskCardHTML(t, true)).join('');
+  document.getElementById('stat-projects').textContent = projects.length;
+  const c = document.getElementById('content');
+  
+  if (tasks.length === 0 && projects.length === 0) {
+    c.innerHTML = '<div class="empty">🎉 No hay tareas pendientes</div>';
+    return;
   }
-}
-
-function taskCardHTML(t, isList = false) {
-  const isSelected = selectedIds.has(t.id);
-  const priorityLabel = { high: 'Alta', medium: 'Media', low: 'Baja' }[t.priority] || '';
-  const typeLabel = { auto: '⚡ Auto', ia: '🧠 IA', manual: '👤 Manual' }[t.type] || '';
-  return `
-    <div class="task-card${isSelected ? ' selected' : ''}" data-id="${t.id}" draggable="true"
-         ondragstart="onDragStart(event, '${t.id}')" ondragend="onDragEnd(event)"
-         onclick="toggleSelect('${t.id}', event)">
-      <div class="task-card-header">
-        <div class="task-checkbox${t.status === 'done' ? ' checked' : ''}" onclick="event.stopPropagation(); toggleStatus('${t.id}')"></div>
-        <div class="task-priority ${t.priority || 'low'}"></div>
-        <div class="task-text" contenteditable="true"
-             onblur="editTaskText('${t.id}', this)"
-             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-             onclick="event.stopPropagation()">${esc(t.text)}</div>
-      </div>
-      <div class="task-meta">
-        <span class="task-tag maestro">${esc(t.agent || 'sin agente')}</span>
-        ${t.project ? `<span class="task-tag proyecto">${esc(t.project)}</span>` : ''}
-        <span class="task-tag ${t.type === 'auto' ? 'auto' : 'ia'}">${typeLabel}</span>
-        <span class="task-tag">⚡ ${priorityLabel}</span>
-      </div>
-      <div class="task-actions">
-        <button class="task-action-btn" onclick="event.stopPropagation(); openTransferDropdown(this, '${t.id}')" title="Transferir">↗</button>
-        <button class="task-action-btn danger" onclick="event.stopPropagation(); deleteTask('${t.id}')" title="Eliminar">🗑</button>
-      </div>
-      <div class="transfer-dropdown" id="transfer-dd-${t.id}">
-        <div style="font-size:10px;color:var(--text3);padding:6px 10px;text-transform:uppercase;font-weight:600;">Transferir a</div>
-        ${agents.map(a => `<div class="transfer-option" onclick="event.stopPropagation(); transferTask('${t.id}', 'agent', '${esc(a)}')">${esc(a)}</div>`).join('')}
-        ${projects.map(p => `<div class="transfer-option" onclick="event.stopPropagation(); transferTask('${t.id}', 'project', '${esc(p)}')">📁 ${esc(p)}</div>`).join('')}
-      </div>
-    </div>`;
-}
-
-function renderSidebar() {
-  const projContainer = document.getElementById('nav-projects');
-  projects.forEach(p => {
-    const count = tasks.filter(t => t.project === p).length;
-    const existing = projContainer.querySelector(`[data-project="${CSS.escape(p)}"]`);
-    const html = `<div class="nav-item" data-project="${esc(p)}" onclick="filterByProject('${esc(p)}')">
-      <span>📁</span> ${esc(p)} <span class="count">${count}</span>
-    </div>`;
-    if (existing) existing.outerHTML = html;
-    else projContainer.innerHTML += html;
-  });
-
-  const agentContainer = document.getElementById('nav-agents');
-  agents.forEach(a => {
-    const count = tasks.filter(t => t.agent === a).length;
-    const existing = agentContainer.querySelector(`[data-agent="${CSS.escape(a)}"]`);
-    const html = `<div class="nav-item" data-agent="${esc(a)}" onclick="filterByAgent('${esc(a)}')">
-      <span>🤖</span> ${esc(a)} <span class="count">${count}</span>
-    </div>`;
-    if (existing) existing.outerHTML = html;
-    else agentContainer.innerHTML += html;
-  });
-}
-
-function renderFilters() {
-  const agentSel = document.getElementById('filter-agent');
-  const projectSel = document.getElementById('filter-project');
-
-  agentSel.innerHTML = '<option value="">Todos los agentes</option>' +
-    agents.map(a => `<option value="${esc(a)}" ${currentFilter.agent === a ? 'selected' : ''}>${esc(a)}</option>`).join('');
-  projectSel.innerHTML = '<option value="">Todos los proyectos</option>' +
-    projects.map(p => `<option value="${esc(p)}" ${currentFilter.project === p ? 'selected' : ''}>${esc(p)}</option>`).join('');
-
-  // Update modal selects
-  document.getElementById('new-task-agent').innerHTML =
-    agents.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('') +
-    '<option value="">-- Sin asignar --</option>';
-  document.getElementById('new-task-project').innerHTML =
-    projects.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('') +
-    '<option value="">-- General --</option>';
-  document.getElementById('transfer-agent').innerHTML =
-    agents.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
-  document.getElementById('transfer-project').innerHTML =
-    projects.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
-}
-
-// === ACTIONS ===
-function toggleSelect(id, event) {
-  if (event && event.target.closest('.task-actions') || event.target.closest('.task-checkbox') || event.target.closest('.transfer-dropdown')) return;
-  if (selectedIds.has(id)) selectedIds.delete(id);
-  else selectedIds.add(id);
-  updateSelectionBar();
-  renderKanban();
-  renderList();
-}
-
-function updateSelectionBar() {
-  const bar = document.getElementById('selection-bar');
-  if (selectedIds.size > 0) {
-    bar.classList.add('show');
-    document.getElementById('sel-count').textContent = selectedIds.size;
-  } else {
-    bar.classList.remove('show');
+  
+  let html = '';
+  
+  // Tasks section
+  if (tasks.length > 0) {
+    html += '<div class="section-title">📋 Tareas pendientes</div>';
+    tasks.forEach(t => {
+      const isSelected = selected.has(t.id);
+      html += `<div class="card">
+        <div class="card-top">
+          <div class="checkbox ${isSelected ? 'checked' : ''}" onclick="toggleTask('${t.id}')"></div>
+          <div class="card-text">${t.texto}</div>
+        </div>
+        <div class="card-meta">
+          <span class="tag">${t.route.maestro.id}</span>
+          <span class="tag">${t.route.specialist.id || '—'}</span>
+          ${t.project ? `<span class="tag">📁 ${t.project}</span>` : ''}
+        </div>
+      </div>`;
+    });
   }
-}
-
-function clearSelection() {
-  selectedIds.clear();
-  updateSelectionBar();
-  renderKanban();
-  renderList();
-}
-
-function toggleStatus(id) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  t.status = t.status === 'done' ? 'todo' : 'done';
-  apiPost('/api/tasks/move', { id, status: t.status });
-  saveTasks();
-  showToast(t.status === 'done' ? '✅ Tarea completada' : '📋 Tarea reabierta', t.status === 'done' ? 'success' : 'info');
-}
-
-function editTaskText(id, el) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  const newText = el.innerText.trim();
-  if (newText && newText !== t.text) {
-    t.text = newText;
-    apiPost('/api/tasks/update', { id, text: newText });
-    saveTasks();
-    showToast('✏️ Tarea actualizada', 'success');
-  } else {
-    el.innerText = t.text;
+  
+  // Projects section
+  if (projects.length > 0) {
+    html += '<div class="section-title">📁 Proyectos</div>';
+    projects.forEach(p => {
+      const projectTasks = tasks.filter(t => t.project === p.name);
+      const allSelected = projectTasks.length > 0 && projectTasks.every(t => selected.has(t.id));
+      
+      html += `<div class="project-card">
+        <div class="checkbox ${allSelected ? 'checked' : ''}" onclick="toggleProjectTasks('${p.name.replace(/'/g, "\\'")}')"></div>
+        <div class="project-icon">${p.icon}</div>
+        <div class="project-info">
+          <div class="project-name">${p.name}</div>
+          <div class="project-desc">${p.total} tareas (${p.completadas} listas)</div>
+        </div>
+        <div class="project-count">${projectTasks.filter(t => selected.has(t.id)).length}/${projectTasks.length}</div>
+      </div>`;
+    });
   }
+  
+  c.innerHTML = html;
+  updateFab();
 }
 
-function deleteTask(id) {
-  if (!confirm('¿Eliminar esta tarea?')) return;
-  tasks = tasks.filter(t => t.id !== id);
-  selectedIds.delete(id);
-  apiPost('/api/tasks/delete', { id });
-  saveTasks();
-  updateSelectionBar();
-  showToast('🗑 Tarea eliminada', 'success');
-}
-
-function bulkDelete() {
-  if (selectedIds.size === 0) return;
-  if (!confirm(`¿Eliminar ${selectedIds.size} tarea(s)?`)) return;
-  tasks = tasks.filter(t => !selectedIds.has(t.id));
-  apiPost('/api/tasks/delete', { ids: [...selectedIds] });
-  selectedIds.clear();
-  saveTasks();
-  updateSelectionBar();
-  showToast('🗑 Tareas eliminadas', 'success');
-}
-
-function bulkComplete() {
-  if (selectedIds.size === 0) return;
-  tasks.forEach(t => { if (selectedIds.has(t.id)) t.status = 'done'; });
-  apiPost('/api/tasks/move', { ids: [...selectedIds], status: 'done' });
-  selectedIds.clear();
-  saveTasks();
-  updateSelectionBar();
-  showToast('✅ Tareas completadas', 'success');
-}
-
-function bulkTransfer() {
-  if (selectedIds.size === 0) return;
-  document.getElementById('transfer-modal').classList.add('show');
-}
-
-function confirmTransfer() {
-  const agent = document.getElementById('transfer-agent').value;
-  const project = document.getElementById('transfer-project').value;
-  tasks.forEach(t => {
-    if (selectedIds.has(t.id)) {
-      if (agent) t.agent = agent;
-      if (project) t.project = project;
-    }
-  });
-  apiPost('/api/tasks/transfer', { ids: [...selectedIds], agent, project });
-  closeTransferModal();
-  selectedIds.clear();
-  saveTasks();
-  updateSelectionBar();
-  showToast('↗ Tareas transferidas', 'success');
-}
-
-function transferTask(id, type, value) {
-  const t = tasks.find(x => x.id === id);
-  if (!t) return;
-  if (type === 'agent') t.agent = value;
-  if (type === 'project') t.project = value;
-  apiPost('/api/tasks/transfer', { ids: [id], agent: t.agent, project: t.project });
-  saveTasks();
-  closeAllDropdowns();
-  showToast(`↗ Transferido a ${value}`, 'success');
-}
-
-function bulkPriority() {
-  if (selectedIds.size === 0) return;
-  modalPriority = 'low';
-  updateModalPriorityUI();
-  document.getElementById('priority-modal').classList.add('show');
-}
-
-function confirmBulkPriority() {
-  tasks.forEach(t => { if (selectedIds.has(t.id)) t.priority = modalPriority; });
-  apiPost('/api/tasks/update', { ids: [...selectedIds], priority: modalPriority });
-  closePriorityModal();
-  selectedIds.clear();
-  saveTasks();
-  updateSelectionBar();
-  showToast('⚡ Prioridad actualizada', 'success');
-}
-
-function selectPriority(el) {
-  el.parentElement.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-}
-
-function selectModalPriority(el) {
-  modalPriority = el.dataset.priority;
-  updateModalPriorityUI();
-}
-
-function updateModalPriorityUI() {
-  document.querySelectorAll('#priority-modal .priority-option').forEach(o => {
-    o.classList.toggle('selected', o.dataset.priority === modalPriority);
-  });
-}
-
-// === CREATE TASK ===
-function openCreateModal() {
-  document.getElementById('create-modal').classList.add('show');
-  document.getElementById('new-task-text').focus();
-}
-
-function closeCreateModal() {
-  document.getElementById('create-modal').classList.remove('show');
-  document.getElementById('new-task-text').value = '';
-}
-
-function createTask() {
-  const text = document.getElementById('new-task-text').value.trim();
-  if (!text) { showToast('⚠️ Escribe una descripción', 'error'); return; }
-  const agent = document.getElementById('new-task-agent').value;
-  const project = document.getElementById('new-task-project').value;
-  const type = document.getElementById('new-task-type').value;
-  const priorityEl = document.querySelector('#create-modal .priority-option.selected');
-  const priority = priorityEl ? priorityEl.dataset.priority : 'low';
-  const status = document.getElementById('new-task-status').value;
-
-  const task = { id: uid(), text, agent, project, type, priority, status, createdAt: Date.now() };
-  tasks.push(task);
-  apiPost('/api/tasks/create', task);
-  saveTasks();
-  closeCreateModal();
-  showToast('✨ Tarea creada', 'success');
-}
-
-// === DRAG & DROP ===
-function onDragStart(event, id) {
-  draggingTask = id;
-  event.target.classList.add('dragging');
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', id);
-}
-
-function onDragEnd(event) {
-  event.target.classList.remove('dragging');
-  draggingTask = null;
-  document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
-}
-
-// Setup drop zones
-document.querySelectorAll('.kanban-col').forEach(col => {
-  col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); });
-  col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
-  col.addEventListener('drop', e => {
-    e.preventDefault();
-    col.classList.remove('drag-over');
-    const id = e.dataTransfer.getData('text/plain');
-    const t = tasks.find(x => x.id === id);
-    if (t) {
-      const newStatus = col.dataset.status;
-      if (t.status !== newStatus) {
-        t.status = newStatus;
-        apiPost('/api/tasks/move', { id, status: newStatus });
-        saveTasks();
-        showToast(`📋 Movido a ${newStatus === 'todo' ? 'Por hacer' : newStatus === 'progress' ? 'En progreso' : 'Completadas'}`, 'info');
-      }
-    }
-  });
-});
-
-// === FILTERS ===
-function applyFilters() {
-  currentFilter.search = document.getElementById('search-input').value;
-  currentFilter.agent = document.getElementById('filter-agent').value;
-  currentFilter.project = document.getElementById('filter-project').value;
-  currentFilter.priority = document.getElementById('filter-priority').value;
-  renderKanban();
-  renderList();
-}
-
-function filterByProject(p) {
-  currentFilter.project = currentFilter.project === p ? '' : p;
-  document.getElementById('filter-project').value = currentFilter.project;
-  applyFilters();
-}
-
-function filterByAgent(a) {
-  currentFilter.agent = currentFilter.agent === a ? '' : a;
-  document.getElementById('filter-agent').value = currentFilter.agent;
-  applyFilters();
-}
-
-function filterByType(type) {
-  currentFilter.type = type;
-  applyFilters();
-  document.querySelectorAll('#nav-types .nav-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.filter === type);
-  });
-}
-
-// === VIEW ===
-function setView(view) {
-  currentView = view;
-  saveSettings();
-  document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  document.querySelectorAll('[data-view]').forEach(el => {
-    if (el.dataset.view === view && el.classList.contains('nav-item')) el.classList.add('active');
-    else if (el.classList.contains('nav-item')) el.classList.remove('active');
-  });
-  document.getElementById('kanban-view').style.display = view === 'kanban' ? '' : 'none';
-  document.getElementById('list-view').style.display = view === 'list' ? '' : 'none';
-  document.getElementById('stats-view').style.display = view === 'stats' ? '' : 'none';
-
-  const titles = { kanban: '📋 Kanban', list: '📝 Lista', stats: '📈 Estadísticas' };
-  document.getElementById('header-title').textContent = titles[view] || '📋 Kanban';
-}
-
-// === SIDEBAR ===
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebar-overlay').classList.toggle('show');
-}
-
-function toggleNavSection(el) {
-  const items = el.nextElementSibling;
-  const arrow = el.querySelector('.arrow');
-  arrow.classList.toggle('collapsed');
-  items.classList.toggle('collapsed');
-}
-
-// === DROPDOWNS ===
-function openTransferDropdown(btn, id) {
-  closeAllDropdowns();
-  const dd = document.getElementById('transfer-dd-' + id);
-  if (dd) dd.classList.add('show');
-}
-
-function closeAllDropdowns() {
-  document.querySelectorAll('.transfer-dropdown').forEach(d => d.classList.remove('show'));
-}
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.task-actions')) closeAllDropdowns();
-});
-
-// === MODALS ===
-function closeTransferModal() { document.getElementById('transfer-modal').classList.remove('show'); }
-function closePriorityModal() { document.getElementById('priority-modal').classList.remove('show'); }
-
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('show'); });
-});
-
-// === TOAST ===
-function showToast(msg, type = 'info') {
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${msg}</span>`;
-  container.appendChild(toast);
-  setTimeout(() => { toast.classList.add('out'); setTimeout(() => toast.remove(), 300); }, 2500);
-}
-
-// === UTILS ===
-function esc(s) {
-  if (!s) return '';
-  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
-}
-
-// === START ===
-init();
+load();
+setInterval(load, 30000);
 </script>
 </body>
 </html>
