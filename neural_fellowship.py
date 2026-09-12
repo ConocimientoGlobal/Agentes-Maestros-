@@ -702,46 +702,72 @@ class Orquestador:
 
     def __init__(self):
         self.routing_map = {
-            "design": ["diseño", "ui", "ux", "marca", "visual", "css", "estilo", "branding", "ilustración"],
-            "engineering": ["código", "programar", "app", "web", "api", "base de datos", "software", "devops"],
-            "research": ["investigar", "estudio", "paper", "académico", "científico", "literature"],
-            "finance": ["finanzas", "inversión", "presupuesto", "contabilidad", "impuestos", "valuation"],
-            "security": ["seguridad", "pentest", "vulnerabilidad", "auditoría", "brecha", "compliance"],
-            "marketing": ["marketing", "seo", "contenido", "redes", "campaña", "publicidad", "ads"],
-            "sales": ["venta", "propuesta", "cliente", "prospecto", "lead", "outbound"],
-            "product": ["producto", "roadmap", "feature", "priorización", "sprint"],
-            "game": ["juego", "game", "minecraft", "pokemon", "videojuego", "gamedev"],
-            "health": ["salud", "médico", "bienestar", "fitness", "nutrición", "clínico"],
-            "memory": ["memoria", "conocimiento", "lección", "aprendizaje"],
-            "creativity": ["creatividad", "arte", "diseño", "branding", "visual", "storytelling"],
-            "commercial": ["comercial", "ventas", "marketing", "propuestas", "leads"],
-            "web": ["web", "gis", "mapas", "espacial", "geoespacial"],
+            "design": ["diseño", "ui", "ux", "marca", "visual", "css", "estilo", "branding", "ilustración", "figma", "sketch"],
+            "engineering": ["código", "programar", "app", "web", "api", "base de datos", "software", "devops", "pip", "install", "python", "npm", "node", "react", "vue", "angular", "typescript", "javascript", "fastapi", "django", "flask", "docker", "kubernetes", "deploy", "git", "github"],
+            "research": ["investigar", "estudio", "paper", "académico", "científico", "literature", "análisis", "datos", "encuesta"],
+            "finance": ["finanzas", "inversión", "presupuesto", "contabilidad", "impuestos", "valuation", "modelo financiero"],
+            "security": ["seguridad", "pentest", "vulnerabilidad", "auditoría", "brecha", "compliance", " OWasp", "exploit"],
+            "marketing": ["marketing", "seo", "contenido", "redes", "campaña", "publicidad", "ads", "google ads", "meta ads"],
+            "sales": ["venta", "propuesta", "cliente", "prospecto", "lead", "outbound", "crm"],
+            "product": ["producto", "roadmap", "feature", "priorización", "sprint", "jira", "confluence"],
+            "game": ["juego", "game", "minecraft", "pokemon", "videojuego", "gamedev", "unity", "unreal"],
+            "health": ["salud", "médico", "bienestar", "fitness", "nutrición", "clínico", "terapia"],
+            "memory": ["memoria", "conocimiento", "lección", "aprendizaje", "documentación"],
+            "creativity": ["creatividad", "arte", "diseño", "branding", "visual", "storytelling", "música", "video"],
+            "commercial": ["comercial", "ventas", "marketing", "propuestas", "leads", "facturación"],
+            "web": ["web", "gis", "mapas", "espacial", "geoespacial", "leaflet", "mapbox"],
+        }
+        
+        # Keywords extendidas por maestro para matching más preciso
+        self.maestro_keywords = {
+            "NEXUS": ["python", "javascript", "typescript", "react", "vue", "angular", "node", "fastapi", "django", "flask", "spring", "docker", "kubernetes", "git", "github", "gitlab", "pip", "npm", "yarn", "install", "deploy", "ci/cd", "aws", "azure", "gcp", "linux", "sql", "nosql", "mongodb", "postgres", "redis", "api", "rest", "graphql", "microservicio", "testing", "pytest", "unittest"],
+            "AGENCY": ["seo", "google ads", "meta ads", "facebook ads", "instagram", "linkedin", "twitter", "content", "copywriting", "email marketing", "newsletter", "landing page", "conversion", "ctr", "roi", "cpc", "crm", "hubspot", "mailchimp", "klaviyo", "propuesta", "prospecto", "lead", "outbound"],
+            "ORION": ["investigación", "paper", "artículo", "estudio", "análisis", "datos", "encuesta", "estadística", "literature review", "meta-análisis", "científico", "académico", "tesis", "arxiv", "pubmed"],
+            "AURUM": ["modelo financiero", "valuación", "dcf", "lbo", "merger", "comps", "fp&a", "budget", "forecast", "inversión", "portafolio", "riesgo", "volatilidad", "crypto", "trading"],
+            "SENTINEL": ["seguridad", "pentest", "vulnerabilidad", "owasp", "exploit", "xss", "sql injection", "csrf", "rce", "reverse engineering", "malware", "forensics", "compliance", "soc2", "iso27001", "gdpr"],
+            "MERIDIAN": ["jira", "confluence", "asana", "trello", "notion", "sprint", "roadmap", "okr", "kpi", "métricas", "dashboard", "reporte", "reunión", "standup", "retrospective"],
+            "ARCAN": ["diseño", "ui", "ux", "figma", "sketch", "adobe", "illustrator", "photoshop", "branding", "logo", "paleta", "tipografía", "wireframe", "mockup", "prototipo", "animación", "motion"],
+            "HELIOS": ["gis", "mapas", "leaflet", "mapbox", "openlayers", "geoserver", "postgis", "geoespacial", "cartografía", "drones", "satélite", "remote sensing"],
+            "CRONUS": ["unity", "unreal", "godot", "game design", "minecraft", "modding", "pixel art", "shader", "level design", "narrativa"],
+            "MNEMOS": ["documentación", "wiki", "conocimiento", "onboarding", "sop", "proceso", "knowledge base"],
         }
 
     def determinar_maestro(self, tarea: str) -> dict:
-        """Determina el maestro óptimo para una tarea."""
+        """Determina el óptimo para una tarea con scoring mejorado."""
         tarea_lower = tarea.lower()
         scores = {}
 
         for maestro_id, info in AGENTES_MAESTROS.items():
             score = 0
-            # Match por nombre de maestro
+            
+            # 1. Match por nombre de maestro directo
             if maestro_id.lower() in tarea_lower:
                 score += 50
-            # Match por dominio
+            
+            # 2. Match por dominio
             if info["dominio"].lower() in tarea_lower:
                 score += 40
-            # Match por especialidades
+            
+            # 3. Match por keywords extendidas del maestro
+            for kw in self.maestro_keywords.get(maestro_id, []):
+                if kw.lower() in tarea_lower:
+                    score += 35
+            
+            # 4. Match por especialidades
             for esp in info.get("especialidades", []):
                 if esp.lower().replace("-", " ") in tarea_lower:
                     score += 25
-            # Match por routing keywords
+            
+            # 5. Match por routing_map (division → keywords)
             for keyword in self.routing_map.get(info["division"].split(" → ")[0].split(" + ")[0], []):
                 if keyword in tarea_lower:
                     score += 15
-            # Match por routing text
-            if any(kw in tarea_lower for kw in info.get("routing", "").lower().split(", ")[:3]):
-                score += 10
+            
+            # 6. Match por palabras del routing text
+            routing_words = info.get("routing", "").lower().split(", ")
+            for rw in routing_words:
+                if len(rw) > 3 and rw in tarea_lower:
+                    score += 10
 
             if score > 0:
                 scores[maestro_id] = score
