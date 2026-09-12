@@ -631,8 +631,9 @@
     "security-application-security-engineer": {
       "maestro": "SENTINEL",
       "capacidades": [
-        "threat-modeling",
-        "secure-code-review"
+        "appsec",
+        "secure-code-review",
+        "bug-bounty"
       ]
     },
     "security-security-architect": {
@@ -969,145 +970,131 @@
     "engineering-cloud-architect": {
       "maestro": "NEXUS",
       "capacidades": [
-        "cloud-design",
-        "multi-cloud",
-        "cost-optimization",
-        "well-architected"
+        "cloud",
+        "aws",
+        "azure",
+        "gcp"
       ]
     },
     "engineering-rust-engineer": {
       "maestro": "NEXUS",
       "capacidades": [
         "rust",
-        "systems-programming",
-        "memory-safety",
-        "concurrency"
+        "systems",
+        "memory-safety"
       ]
     },
     "engineering-wasm-engineer": {
       "maestro": "NEXUS",
       "capacidades": [
+        "wasm",
         "webassembly",
-        "wasmtime",
-        "performance",
-        "cross-language"
+        "performance"
       ]
     },
     "engineering-graphql-engineer": {
       "maestro": "NEXUS",
       "capacidades": [
-        "graphql-schema",
-        "resolvers",
-        "federation",
-        "subscriptions"
+        "graphql",
+        "schema-design",
+        "federation"
       ]
     },
     "engineering-embedded-engineer": {
       "maestro": "NEXUS",
       "capacidades": [
-        "microcontrollers",
-        "rtos",
-        "bare-metal",
-        "firmware"
+        "embedded",
+        "c",
+        "arduino",
+        "rtos"
       ]
     },
     "research-ethnographer": {
       "maestro": "ORION",
       "capacidades": [
-        "participant-observation",
+        "etnografía",
         "fieldwork",
-        "qualitative-methods",
-        "cultural-analysis"
+        "qualitative"
       ]
     },
     "research-political-scientist": {
       "maestro": "ORION",
       "capacidades": [
-        "political-theory",
-        "comparative-politics",
-        "policy-analysis",
-        "governance"
+        "política",
+        "políticas públicas",
+        "gobierno"
       ]
     },
     "research-philosopher": {
       "maestro": "ORION",
       "capacidades": [
-        "ethics",
-        "epistemology",
-        "logic",
-        "metaphysics"
+        "filosofía",
+        "ética",
+        "epistemología"
       ]
     },
     "research-linguist": {
       "maestro": "ORION",
       "capacidades": [
-        "phonology",
-        "syntax",
-        "semantics",
-        "sociolinguistics"
+        "lingüística",
+        "sintaxis",
+        "semántica"
       ]
     },
     "security-malware-analyst": {
       "maestro": "SENTINEL",
       "capacidades": [
+        "malware",
         "reverse-engineering",
-        "malware-classification",
-        "sandboxing",
-        "behavioral-analysis"
+        "sandboxing"
       ]
     },
     "security-blockchain-auditor": {
       "maestro": "SENTINEL",
       "capacidades": [
-        "defi-audit",
-        "flash-loan-risks",
-        "governance-attacks",
-        "economic-security"
+        "blockchain-audit",
+        "smart-contract",
+        "defi-security"
       ]
     },
     "security-iot-security": {
       "maestro": "SENTINEL",
       "capacidades": [
+        "iot",
         "embedded-security",
-        "firmware-analysis",
-        "protocol-security",
-        "device-hardening"
+        "firmware"
       ]
     },
     "security-supply-chain-security": {
       "maestro": "SENTINEL",
       "capacidades": [
-        "dependency-audit",
+        "supply-chain",
         "sbom",
-        "provenance",
-        "artifact-signing"
+        "dependency-check"
       ]
     },
     "design-motion-designer": {
       "maestro": "ARCAN",
       "capacidades": [
-        "animation",
-        "transitions",
-        "micro-interactions",
-        "motion-systems"
+        "animación",
+        "motion",
+        "after-effects"
       ]
     },
     "design-font-designer": {
       "maestro": "ARCAN",
       "capacidades": [
-        "typography",
-        "typeface-design",
-        "kerning",
-        "variable-fonts"
+        "tipografía",
+        "lettering",
+        "fuentes"
       ]
     },
     "design-icon-designer": {
       "maestro": "ARCAN",
       "capacidades": [
-        "icon-systems",
-        "pictograms",
-        "scalable-icons",
-        "iconography"
+        "iconografía",
+        "íconos",
+        "svg"
       ]
     },
     "design-fashion-designer": {
@@ -1122,46 +1109,46 @@
     "finance-risk-manager": {
       "maestro": "AURUM",
       "capacidades": [
-        "risk-assessment",
+        "risk-management",
         "var",
-        "stress-testing",
-        "hedging-strategies"
+        "hedging"
       ]
     },
     "finance-quant-analyst": {
       "maestro": "AURUM",
       "capacidades": [
-        "algorithmic-trading",
-        "statistical-arbitrage",
-        "time-series",
-        "derivatives-pricing"
+        "quant",
+        "algorithmic",
+        "backtesting"
       ]
     },
     "finance-crypto-analyst": {
       "maestro": "AURUM",
+      "capacidadas": [
+        "crypto-analysis",
+        "on-chain",
+        "tokenomics"
+      ],
       "capacidades": [
-        "tokenomics",
-        "on-chain-analysis",
-        "defi-protocols",
-        "market-microstructure"
+        "crypto-analysis",
+        "on-chain",
+        "tokenomics"
       ]
     },
     "finance-audit-compliance": {
       "maestro": "AURUM",
       "capacidades": [
+        "auditoría",
         "internal-controls",
-        "sox-compliance",
-        "audit-trails",
-        "regulatory-reporting"
+        "sox"
       ]
     },
     "sales-account-executive": {
       "maestro": "AGENCY",
       "capacidades": [
-        "enterprise-sales",
+        "closing",
         "negotiation",
-        "contracting",
-        "deal-closure"
+        "enterprise"
       ]
     },
     "sales-customer-success-manager": {
@@ -1176,46 +1163,46 @@
     "sales-partnership-manager": {
       "maestro": "AGENCY",
       "capacidades": [
-        "channel-partners",
-        "strategic-alliances",
-        "co-selling",
-        "partner-enablement"
+        "partnerships",
+        "channel",
+        "alliances"
       ]
     },
     "marketing-pr-specialist": {
       "maestro": "AGENCY",
-      "capacidades": [
+      "capacidadas": [
+        "pr",
         "media-relations",
-        "press-releases",
-        "crisis-comms",
-        "thought-leadership"
+        "press-release"
+      ],
+      "capacidades": [
+        "pr",
+        "media-relations",
+        "press-release"
       ]
     },
     "marketing-influencer-marketer": {
       "maestro": "AGENCY",
       "capacidades": [
-        "influencer-outreach",
-        "creator-partnerships",
-        "affiliate-programs",
-        "campaign-tracking"
+        "influencers",
+        "creator-economy",
+        "ugc"
       ]
     },
     "marketing-event-marketer": {
       "maestro": "AGENCY",
       "capacidades": [
-        "event-planning",
-        "conference-management",
-        "virtual-events",
-        "sponsorship"
+        "eventos",
+        "conferencias",
+        "experiential"
       ]
     },
     "marketing-podcast-producer": {
       "maestro": "AGENCY",
       "capacidades": [
-        "audio-production",
-        "guest-booking",
-        "distribution",
-        "show-growth"
+        "podcast",
+        "audio-content",
+        "show-notes"
       ]
     },
     "game-development-shader-developer": {
@@ -1284,19 +1271,17 @@
     "gis-oceanographer": {
       "maestro": "HELIOS",
       "capacidades": [
-        "bathymetry",
-        "current-modeling",
-        "marine-gis",
+        "oceanografía",
+        "marine-data",
         "coastal-mapping"
       ]
     },
     "gis-climate-data-analyst": {
       "maestro": "HELIOS",
       "capacidades": [
-        "climate-modeling",
-        "remote-sensing",
-        "carbon-monitoring",
-        "weather-patterns"
+        "climate",
+        "weather",
+        "environmental-data"
       ]
     },
     "gis-archaeologist-gis": {
@@ -1365,10 +1350,9 @@
     "engineering-mlops-engineer": {
       "maestro": "NEXUS",
       "capacidades": [
-        "model-serving",
-        "feature-stores",
-        "experiment-tracking",
-        "model-monitoring"
+        "mlops",
+        "kubeflow",
+        "feature-store"
       ]
     },
     "research-economist": {
@@ -1464,10 +1448,9 @@
     "gis-urban-planner": {
       "maestro": "HELIOS",
       "capacidades": [
-        "zoning",
-        "transit-oriented-development",
-        "spatial-planning",
-        "smart-cities"
+        "urbanismo",
+        "city-planning",
+        "transport-models"
       ]
     },
     "sales-sales-engineer": {
@@ -1482,10 +1465,9 @@
     "product-ux-writer": {
       "maestro": "MERIDIAN",
       "capacidades": [
+        "ux-writing",
         "microcopy",
-        "content-strategy",
-        "voice-tone",
-        "accessibility-labeling"
+        "content-strategy"
       ]
     },
     "mnemos-creative-writing-coach": {
@@ -1518,10 +1500,9 @@
     "engineering-platform-engineer": {
       "maestro": "NEXUS",
       "capacidades": [
-        "developer-experience",
-        "self-service",
-        "platform-apis",
-        "idp"
+        "platform",
+        "scalability",
+        "multi-tenant"
       ]
     },
     "engineering-reliability-engineer": {
@@ -1594,6 +1575,739 @@
         "scenario-planning",
         "trend-analysis",
         "emerging-tech"
+      ]
+    },
+    "design-fashion-stylist": {
+      "maestro": "ARCAN",
+      "capacidades": [
+        "moda",
+        "tendencias",
+        "styling"
+      ]
+    },
+    "design-3d-modeler": {
+      "maestro": "ARCAN",
+      "capacidades": [
+        "3d",
+        "modelado",
+        "blender"
+      ]
+    },
+    "design-sound-branding": {
+      "maestro": "ARCAN",
+      "capacidades": [
+        "sonido-marca",
+        "audio-logo",
+        "sonic-brand"
+      ]
+    },
+    "design-product-designer": {
+      "maestro": "ARCAN",
+      "capacidades": [
+        "diseño-producto",
+        "ergonomía",
+        "materiales"
+      ]
+    },
+    "engineering-blockchain-engineer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "smart-contracts",
+        "solidity",
+        "defi"
+      ]
+    },
+    "engineering-security-engineer": {
+      "maestro": "NEXUS",
+      "capacidadas": [
+        "appsec",
+        "devsecops",
+        "sast",
+        "dast"
+      ],
+      "capacidades": [
+        "appsec",
+        "devsecops",
+        "sast",
+        "dast"
+      ]
+    },
+    "engineering-search-engineer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "elasticsearch",
+        "solr",
+        "full-text-search"
+      ]
+    },
+    "engineering-testing-engineer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "testing",
+        "qa",
+        "cypress",
+        "selenium"
+      ]
+    },
+    "research-anthropologist": {
+      "maestro": "ORION",
+      "capacidades": [
+        "antropología",
+        "cultura",
+        "fieldwork"
+      ]
+    },
+    "research-archivist": {
+      "maestro": "ORION",
+      "capacidades": [
+        "archivística",
+        "preservación",
+        "catalogación"
+      ]
+    },
+    "research-demographer": {
+      "maestro": "ORION",
+      "capacidades": [
+        "Demografía",
+        "población",
+        "estadísticas"
+      ]
+    },
+    "security-threat-hunter": {
+      "maestro": "SENTINEL",
+      "capacidades": [
+        "threat-hunting",
+        "ioc",
+        "attribution"
+      ]
+    },
+    "security-cryptography-engineer": {
+      "maestro": "SENTINEL",
+      "capacidades": [
+        "cryptografía",
+        "ciphers",
+        "key-management"
+      ]
+    },
+    "security-governance-analyst": {
+      "maestro": "SENTINEL",
+      "capacidadas": [
+        "governance",
+        "risk",
+        "compliance-frameworks"
+      ],
+      "capacidades": [
+        "governance",
+        "risk",
+        "compliance-frameworks"
+      ]
+    },
+    "finance-treasury-manager": {
+      "maestro": "AURUM",
+      "capacidades": [
+        "treasury",
+        "cash-flow",
+        "fx-risk"
+      ]
+    },
+    "finance-credit-analyst": {
+      "maestro": "AURUM",
+      "capacidades": [
+        "crédito",
+        "ratings",
+        "credit-risk"
+      ]
+    },
+    "marketing-affiliate-manager": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "affiliate",
+        "partnerships",
+        "performance-marketing"
+      ]
+    },
+    "marketing-community-manager": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "comunidad",
+        "engagement",
+        "social-listening"
+      ]
+    },
+    "sales-customer-success": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "retention",
+        "onboarding",
+        "churn-prevention"
+      ]
+    },
+    "sales-sdr": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "prospecting",
+        "outreach",
+        "qualification"
+      ]
+    },
+    "game-shader-developer": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "shaders",
+        "hlsl",
+        "glsl",
+        "vfx"
+      ]
+    },
+    "game-ai-developer": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "game-ai",
+        "pathfinding",
+        "behavior-trees"
+      ]
+    },
+    "game-level-balance-analyst": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "balance",
+        "economy-design",
+        "monetization"
+      ]
+    },
+    "game-narrative-writer": {
+      "maestro": "CRONUS",
+      "capacidadas": [
+        "narrativa",
+        "dialogue",
+        "worldbuilding"
+      ],
+      "capacidades": [
+        "narrativa",
+        "dialogue",
+        "worldbuilding"
+      ]
+    },
+    "game-tool-developer": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "tools",
+        "editor",
+        "pipeline"
+      ]
+    },
+    "gis-archaeologist": {
+      "maestro": "HELIOS",
+      "capacidades": [
+        "arqueología",
+        "heritage",
+        "gis-archaeology"
+      ]
+    },
+    "health-nutritionist": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "nutrición",
+        "diet-planning",
+        "supplements"
+      ]
+    },
+    "health-therapist-coach": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "terapia",
+        "coaching",
+        "mental-health"
+      ]
+    },
+    "health-yoga-instructor": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "yoga",
+        "meditación",
+        "mindfulness"
+      ]
+    },
+    "health-sleep-specialist": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "sueño",
+        "sleep-hygiene",
+        "chronobiology"
+      ]
+    },
+    "health-physiotherapist": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "fisioterapia",
+        "rehabilitación",
+        "movement"
+      ]
+    },
+    "health-aging-specialist": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "longevidad",
+        "anti-aging",
+        "geroscience"
+      ]
+    },
+    "infra-network-engineer": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "networking",
+        "tcp-ip",
+        "firewalls"
+      ]
+    },
+    "infra-cost-optimizer": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "cost-optimization",
+        "finops",
+        "reserved-instances"
+      ]
+    },
+    "infra-disaster-recovery": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "dr",
+        "backup",
+        "business-continuity"
+      ]
+    },
+    "infra-monitoring-engineer": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "monitoring",
+        "observability",
+        "prometheus"
+      ]
+    },
+    "infra-site-reliability-engineer": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "sre",
+        "slo",
+        "error-budget"
+      ]
+    },
+    "product-data-analyst": {
+      "maestro": "MERIDIAN",
+      "capacidades": [
+        "data-analysis",
+        "sql",
+        "looker",
+        "tableau"
+      ]
+    },
+    "product-technical-writer": {
+      "maestro": "MERIDIAN",
+      "capacidades": [
+        "technical-writing",
+        "api-docs",
+        "tutorials"
+      ]
+    },
+    "ai-prompt-engineer": {
+      "maestro": "PROPHET",
+      "capacidades": [
+        "prompt-engineering",
+        "chain-of-thought",
+        "few-shot"
+      ]
+    },
+    "ai-data-scientist": {
+      "maestro": "PROPHET",
+      "capacidades": [
+        "data-science",
+        "pandas",
+        "sklearn"
+      ]
+    },
+    "ai-ml-engineer": {
+      "maestro": "PROPHET",
+      "capacidades": [
+        "ml-engineering",
+        "training",
+        "deployment"
+      ]
+    },
+    "ai-computer-vision-engineer": {
+      "maestro": "PROPHET",
+      "capacidades": [
+        "computer-vision",
+        "opencv",
+        "image-classification"
+      ]
+    },
+    "ai-nlp-engineer": {
+      "maestro": "PROPHET",
+      "capacidades": [
+        "nlp",
+        "transformers",
+        "embeddings"
+      ]
+    },
+    "design-typography-specialist": {
+      "maestro": "ARCAN",
+      "capacidades": [
+        "tipografía",
+        "layout",
+        "print-design"
+      ]
+    },
+    "design-illustrator": {
+      "maestro": "ARCAN",
+      "capacidades": [
+        "ilustración",
+        "digital-art",
+        "concept-art"
+      ]
+    },
+    "design-cartoonist": {
+      "maestro": "ARCAN",
+      "capacidases": [
+        "caricatura",
+        "comic",
+        "visual-storytelling"
+      ],
+      "capacidades": [
+        "caricatura",
+        "comic",
+        "visual-storytelling"
+      ]
+    },
+    "design-tattoo-consultant": {
+      "maestro": "ARCAN",
+      "capacidades": [
+        "tattoo",
+        "body-art",
+        "design-consultation"
+      ]
+    },
+    "engineering-devops-engineer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "devops",
+        "ci/cd",
+        "terraform",
+        "ansible"
+      ]
+    },
+    "engineering-database-administrator": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "dba",
+        "mysql",
+        "postgresql"
+      ]
+    },
+    "engineering-network-engineer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "networking",
+        "tcp/ip",
+        "routing",
+        "switching"
+      ]
+    },
+    "engineering-cryptography-engineer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "cryptography",
+        "security-protocols"
+      ]
+    },
+    "engineering-compiler-engineer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "compilers",
+        "interpreters",
+        "llvm"
+      ]
+    },
+    "engineering-operating-system-developer": {
+      "maestro": "NEXUS",
+      "capacidades": [
+        "os-dev",
+        "kernel",
+        "drivers"
+      ]
+    },
+    "research-forensic-analyst": {
+      "maestro": "ORION",
+      "capacidades": [
+        "forensics",
+        "digital-evidence",
+        "chain-of-custody"
+      ]
+    },
+    "research-geologist": {
+      "maestro": "ORION",
+      "capacidades": [
+        "geología",
+        "tectónica",
+        "mineralogía"
+      ]
+    },
+    "research-astronomer": {
+      "maestro": "ORION",
+      "capacidades": [
+        "astronomía",
+        "astrofísica",
+        "cosmología"
+      ]
+    },
+    "research-psychologist-clinical": {
+      "maestro": "ORION",
+      "capacidades": [
+        "psicología-clínica",
+        "diagnóstico",
+        "tratamiento"
+      ]
+    },
+    "research-archaeologist": {
+      "maestro": "ORION",
+      "capacidades": [
+        "arqueología",
+        "excavación",
+        "análisis-de-artefactos"
+      ]
+    },
+    "research-historian": {
+      "maestro": "ORION",
+      "capacidades": [
+        "historia",
+        "investigación",
+        "fuentes-primarias"
+      ]
+    },
+    "security-red-team-operator": {
+      "maestro": "SENTINEL",
+      "capacidades": [
+        "red-team",
+        "adversary-emulation",
+        "attack-simulation"
+      ]
+    },
+    "security-purple-team-coordinator": {
+      "maestro": "SENTINEL",
+      "capacidades": [
+        "purple-team",
+        "threat-intel",
+        "detection-engineering"
+      ]
+    },
+    "security-devsecops-engineer": {
+      "maestro": "SENTINEL",
+      "capacidades": [
+        "devsecops",
+        "security-pipeline",
+        "sast-dast"
+      ]
+    },
+    "security-cloud-security-architect": {
+      "maestro": "SENTINEL",
+      "capacidades": [
+        "cloud-security",
+        "cspm",
+        "ciem"
+      ]
+    },
+    "finance-financial-advisor": {
+      "maestro": "AURUM",
+      "capacidades": [
+        "financial-planning",
+        "retirement",
+        "tax-optimization"
+      ]
+    },
+    "finance-investment-banker": {
+      "maestro": "AURUM",
+      "capacidades": [
+        "ib",
+        "mand",
+        "ecm",
+        "dcm"
+      ]
+    },
+    "finance-private-equity-analyst": {
+      "maestro": "AURUM",
+      "capacidades": [
+        "pe",
+        "due-diligence",
+        "portfolio-management"
+      ]
+    },
+    "finance-venture-capital-analyst": {
+      "maestro": "AURUM",
+      "capacidades": [
+        "vc",
+        "startups",
+        "valuation"
+      ]
+    },
+    "finance-economist": {
+      "maestro": "AURUM",
+      "capacidades": [
+        "economía",
+        "macro",
+        "policy"
+      ]
+    },
+    "marketing-brand-manager": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "brand-management",
+        "strategy",
+        "positioning"
+      ]
+    },
+    "marketing-product-marketer": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "product-marketing",
+        "launch",
+        "messaging"
+      ]
+    },
+    "marketing-content-strategist": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "content-strategy",
+        "editorial",
+        "distribution"
+      ]
+    },
+    "marketing-seo-technical": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "technical-seo",
+        "core-web-vitals",
+        "crawl-optimization"
+      ]
+    },
+    "marketing-ppc-strategist": {
+      "maestro": "AGENCY",
+      "capacidades": [
+        "ppc",
+        "google-ads",
+        "meta-ads",
+        "linkedin-ads"
+      ]
+    },
+    "game-producer": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "producción",
+        "gestión-de-proyecto",
+        "game-production"
+      ]
+    },
+    "game-community-manager": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "community-management",
+        "social-media",
+        "support"
+      ]
+    },
+    "game-monetization-designer": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "monetización",
+        "in-app-purchases",
+        "reward-ads"
+      ]
+    },
+    "game-technical-designer": {
+      "maestro": "CRONUS",
+      "capacidades": [
+        "technical-design",
+        "game-systems",
+        "scripts"
+      ]
+    },
+    "health-wellness-coach": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "wellness",
+        "coaching",
+        "lifestyle"
+      ]
+    },
+    "health-nutrition-coach": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "nutrición",
+        "meal-planning",
+        "supplements"
+      ]
+    },
+    "health-fitness-coach": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "fitness",
+        "training-plans",
+        "body-metrics"
+      ]
+    },
+    "health-mindfulness-coach": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "mindfulness",
+        "meditación",
+        "stress-management"
+      ]
+    },
+    "infra-cloud-architect": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "cloud-architecture",
+        "aws",
+        "azure",
+        "multi-cloud"
+      ]
+    },
+    "infra-database-administrator": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "database-admin",
+        "performance",
+        "backup"
+      ]
+    },
+    "infra-security-engineer": {
+      "maestro": "INFRA",
+      "capacidades": [
+        "infrastructure-security",
+        "network-security",
+        "firewalls"
+      ]
+    },
+    "product-scrum-master": {
+      "maestro": "MERIDIAN",
+      "capacidades": [
+        "scrum",
+        "facilitación",
+        "agile"
+      ]
+    },
+    "product-delivery-manager": {
+      "maestro": "MERIDIAN",
+      "capacidades": [
+        "delivery",
+        "execution",
+        "ship"
+      ]
+    },
+    "product-technical-program-manager": {
+      "maestro": "MERIDIAN",
+      "capacidades": [
+        "technical-program",
+        "cross-functional",
+        "roadmap"
       ]
     }
   }

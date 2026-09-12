@@ -1,0 +1,65 @@
+name: Neural Fellowship CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short
+      
+      - name: Check syntax
+        run: |
+          python -m py_compile neural_fellowship.py
+          python -m py_compile hermes_bridge.py
+          python -m py_compile orchestrator.py
+          python -m py_compile routing_engine.py
+          python -m py_compile memory_system.py
+          python -m py_compile learning_system.py
+      
+      - name: Verify agent_directory.json
+        run: |
+          python -c "
+          import json
+          with open('agent_directory.json') as f:
+              data = json.load(f)
+          maestros = len(data.get('maestros', {}))
+          especialistas = len(data.get('especialistas', {}))
+          print(f'✅ {maestros} maestros, {especialistas} especialistas')
+          assert maestros >= 63, f'Menos de 63 maestros: {maestros}'
+          assert especialistas >= 150, f'Menos de 150 especialistas: {especialistas}'
+          
+          # Check for typos in capacidades
+          for aid, info in data['especialistas'].items():
+              if 'capcidades' in info:
+                  print(f'❌ Typo en {aid}: capcidades -> capacidades')
+                  exit(1)
+          print('✅ Sin typos en capacidades')
+          "
+      
+      - name: Test CLI
+        run: |
+          python neural_fellowship.py --maestros | head -10
+          python neural_fellowship.py --agents | head -10
+          python neural_fellowship.py --scan
+          python neural_fellowship.py --status
+          python hermes_bridge.py status
