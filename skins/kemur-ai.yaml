@@ -1,0 +1,78 @@
+name: kemur-ai
+description: >
+  Kemur.Ai — skin estilo arcoíris para Hermes: cada elemento con color
+  distinto del espectro, amarillo/naranja solo en detalles imperceptibles.
+
+# ── Arcoíris con color único por rol (variedad total) ───────────────────
+colors:
+  banner_border: "#4A154B"         # índigo oscuro — borde banner (único)
+  banner_title: "#FF3366"          # rojo vivo — título banner (único)
+  banner_accent: "#76D7EA"        # azul celeste claro — encabezados sección (único)
+  banner_dim: "#6B7280"            # gris pizarra — texto tenue/separadores (neutro)
+  banner_text: "#E0E7FF"           # azul pálido — cuerpo banner (único)
+  ui_accent: "#00B4D8"             # turquesa — acento general UI (único)
+  ui_label: "#8A2BE2"              # violeta — etiquetas UI (único, no morado)
+  ui_ok: "#A8E6CF"                 # verde lima suave — éxito (diferente al verde de status)
+  ui_error: "#FF6B6B"              # rojo coral — error (convención, ok repetir)
+  ui_warn: "#FFE066"               # amarillo palo suave — advertencia (detalle mínimo)
+  prompt: "#CFFAFE"                # azul hielo — texto del prompt (único, diferente a banner_text)
+  input_rule: "#3B1F6E"            # índigo medio — línea horizontal input (único)
+  response_border: "#FF69B4"       # magenta — borde caja respuesta (único, no violeta)
+  status_bar_bg: "#0F172A"         # azul noche — fondo barra (fondo, no cuenta como color)
+  status_bar_text: "#CBD5E1"       # gris claro — texto barra (neutro)
+  status_bar_strong: "#FF6B9D"     # rosa vivo — texto destacado barra (único, no repite rojo)
+  status_bar_dim: "#64748B"        # gris esló — separadores barra (neutro)
+  status_bar_good: "#2ECC71"       # verde — contexto bueno (convención, ok repetir)
+  status_bar_warn: "#FFD93D"       # amarillo suave — contexto aviso (minimo, detalle)
+  status_bar_bad: "#EF4444"        # rojo — contexto malo (convención, ok repetir)
+  status_bar_critical: "#C77DFF"   # violeta brillante — contexto crítico (único)
+  session_label: "#FF6B9D"         # rosa vivo — label sesión (repara con status_bar_strong: es rosa)
+  session_border: "#00B4D8"        # turquesa — borde ID sesión (repara con ui_accent: es turquesa)
+  completion_menu_bg: "#0F172A"    # azul noche — fondo menú (fondo)
+  completion_menu_current_bg: "#1E293B"  # azul oscuro — fila activa menú (fondo)
+  selection_bg: "#312E81"          # índigo oscuro — fondo selección (fondo)
+  shell_dollar: "#FFD93D"          # amarillo suave — prompt shell (minimo, detalle)
+  voice_status_bg: "#0F172A"       # azul noche — fondo voz (fondo)
+
+# ── Spinner ────────────────────────────────────────────────────────────
+spinner:
+  waiting_faces:
+    - "🌟"
+    - "💫"
+    - "✨"
+    - "⭐"
+  thinking_faces:
+    - "🧠"
+    - "🌀"
+    - "✨"
+    - "💡"
+  thinking_verbs:
+    - "procesando"
+    - "analizando"
+    - "conectando"
+    - "generando"
+    - "resolviendo"
+  wings:
+    - ["🧉", "🧉"]    # Mate icono
+    - ["💡", "💡"]    # Bombilla — idea
+    - ["💫", "💫"]    # Estrella — pensamiento rápido
+
+# ── Branding ──────────────────────────────────────────────────────────
+branding:
+  agent_name: "Kemur.Ai Agent"
+  welcome: "¡Hola! Soy Kemur.Ai. ¿En qué te ayudo hoy?"
+  goodbye: "¡Nos vemos! 🧉"
+  response_label: " 🧉 Kemur.Ai "
+  prompt_symbol: "❯"
+  help_header: "🌟 Comandos disponibles"
+
+# ── Prefijo de herramientas ───────────────────────────────────────────
+tool_prefix: "▸"
+
+# ── Logo de banner ────────────────────────────────────────────────────
+# Colores únicos en cada línea: índigo, rojo, celeste, azul pálido, violeta
+banner_logo: "[bold #00B4D8]Kemur.Ai[/]\n[#FF3366]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/]"
+
+# ── Arte ASCII del banner (opcional) ──────────────────────────────────
+# 9 líneas, cada una con color distinto del espectro
+banner_hero: "[#4A154B]⠀⠀⠀⠀⠀⠀⠀⠀⠀🧠⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]\n[#FF3366]⠀⠀⠀⠀⠀╱⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀╲[/]\n[#76D7EA]⠀⠀⠀╱⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀╲[/]\n[#E0E7FF]⠀╱⠀⠀⠀⠀ Kemur.Ai ⠀⠀⠀⠀⠀⠀⠀╲[/]\n[#C77DFF]╲⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀╱[/]\n[#8A2BE2]══╲⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀╱[/]\n[#00B4D8]⠀⠀⠀╲⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀╱[/]\n[#CFFAFE]⠀⠀⠀⠀⠀╲⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀╱[/]\n[#E0E7FF]⠀⠀⠀⠀⠀⠀⠀⠀⠀🧠⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]"
