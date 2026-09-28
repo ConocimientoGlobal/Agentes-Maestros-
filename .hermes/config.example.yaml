@@ -1,0 +1,8 @@
+# config.example.yaml
+#
+# Copy this file to ~/.hermes/config.yaml and fill in the required values.
+#
+# Required sections:
+#   - telegram.token: your bot token from @BotFather
+#   - telegram.allowed_users: your Telegram user or group IDs
+...[truncated]

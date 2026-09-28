@@ -29,6 +29,11 @@ orchestrator-logs/
 executor_state.json
 agent_queue.json
 _detection_report.json
-
-# Hermes local
-.hermes/
+# Hermes local (generated/state files stay local; example configs are versioned)
+.hermes/token*
+.hermes/bot_token*
+.hermes/state.db
+.hermes/*.log
+.hermes/gateway_state.json
+.hermes/sessions/
+.hermes/cache/
