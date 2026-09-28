@@ -34,7 +34,7 @@ Tarea → route_task()
 
 ```python
 import sys
-sys.path.insert(0, '/data/data/com.termux/files/home/tmp/Agentes-Maestros-')
+sys.path.insert(0, '/data/data/com.termux/files/home/Agentes-Maestros-')
 from hermes_bridge import route_task
 
 result = route_task("Crear landing page con SEO")
@@ -87,7 +87,7 @@ status = get_system_status()
 ```python
 # Paso 1: Route
 import sys
-sys.path.insert(0, '/data/data/com.termux/files/home/tmp/Agentes-Maestros-')
+sys.path.insert(0, '/data/data/com.termux/files/home/Agentes-Maestros-')
 from hermes_bridge import route_task
 
 routing = route_task("Crear landing page con SEO")

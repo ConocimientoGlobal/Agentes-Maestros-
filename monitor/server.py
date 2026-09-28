@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-REPO_PATH = Path("/data/data/com.termux/files/home/tmp/Agentes-Maestros-")
+REPO_PATH = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_PATH))
 
 from neural_fellowship import (

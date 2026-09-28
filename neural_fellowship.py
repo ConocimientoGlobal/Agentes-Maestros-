@@ -731,6 +731,23 @@ class Orquestador:
             "CRONUS": ["unity", "unreal", "godot", "game design", "minecraft", "modding", "pixel art", "shader", "level design", "narrativa"],
             "MNEMOS": ["documentación", "wiki", "conocimiento", "onboarding", "sop", "proceso", "knowledge base"],
         }
+        # Keywords de especialista por dominio (dominan sobre keywords de maestro)
+        self.especialista_keywords = {
+            "NEXUS": {
+                "sql": ["sql", "postgres", "postgresql", "query", "database", "schema", "optimización"],
+                "database": ["database", "dba", "mysql", "postgresql", "sql server", "schema"],
+                "backend": ["backend", "api", "rest", "graphql", "fastapi", "django", "flask", "server"],
+                "frontend": ["react", "vue", "angular", "frontend", "ui", "component", "css"],
+                "devops": ["devops", "cicd", "docker", "kubernetes", "deploy", "cloud", "terraform", "ansible"],
+                "security": ["security", "appsec", "pentest", "vulnerability", "owasp", "cryptography"],
+                "ai/ml": ["ml", "machine learning", "ai", "llm", "model", "training", "nlp", "computer vision"],
+                "data": ["data", "pipeline", "etl", "spark", "lakehouse", "data engineer"],
+                "mobile": ["ios", "android", "mobile", "swift", "kotlin", "cross-platform"],
+                "performance": ["performance", "optimization", "profiling", "caching", "scaling", "kubernetes"],
+                "embedded": ["embedded", "iot", "c", "arduino", "rtos", "firmware"],
+                "blockchain": ["blockchain", "smart contract", "solidity", "web3", "defi"],
+            }
+        }
 
     def determinar_maestro(self, tarea: str) -> dict:
         """Determina el óptimo para una tarea con scoring mejorado."""
@@ -811,6 +828,29 @@ class Orquestador:
                     "confianza": min(score, 100),
                     "capacidades": info.get("capacidades", [])
                 }
+
+        # Si el mejor match tiene confianza baja (< 30), intentar con keywords de especialista
+        if best_score < 30 and maestro in self.especialista_keywords:
+            for categoria, palabras in self.especialista_keywords[maestro].items():
+                for palabra in palabras:
+                    if palabra.lower() in tarea_lower:
+                        # Buscar especialista con esa palabra en capacidades
+                        for agent_id, info in AGENTES_ESPECIALIZADOS.items():
+                            if info["maestro"] != maestro:
+                                continue
+                            caps_text = " ".join(info.get("capacidades", [])).lower().replace("-", " ")
+                            if palabra.lower() in caps_text:
+                                # Nuevo especialista encontrado — reemplazar si mejor score
+                                cat_score = 50 + (30 if palabra.lower() == tarea_lower.split()[0] else 0)
+                                if cat_score > best_score:
+                                    best_score = cat_score
+                                    best_match = {
+                                        "especialista": agent_id,
+                                        "maestro": info["maestro"],
+                                        "confianza": min(cat_score, 100),
+                                        "capacidades": info.get("capacidades", [])
+                                    }
+                        break  # Una palabra de la categoría ya fue suficiente
 
         return best_match or {"especialista": None, "maestro": maestro or "PHOENIX", "confianza": 0, "capacidades": []}
 

@@ -111,10 +111,32 @@ def run_task(description: str, dry_run: bool = False) -> dict:
         executor = AutoExecutor()
         exec_result = executor.ejecutar(description.strip(), dry_run=dry_run)
         exec_result["timestamp"] = datetime.now().isoformat()
-        result["execution"] = {
-            "type": "auto",
-            "result": exec_result,
-        }
+        # If AutoExecutor rejected the task (not a mechanical pattern), fall back to delegation
+        if exec_result.get("status") == "no_automatizable":
+            specialist = route["specialist"]
+            maestro = route["maestro"]
+            specialist_prompt = _build_specialist_prompt(
+                task=description,
+                specialist_id=specialist["id"],
+                specialist_capabilities=specialist.get("capabilities", []),
+                maestro_id=maestro["id"],
+                maestro_domain=maestro["domain"],
+            )
+            result["execution"] = {
+                "type": "delegate",
+                "delegation": {
+                    "specialist_id": specialist["id"],
+                    "maestro_id": maestro["id"],
+                    "prompt": specialist_prompt,
+                    "confidence": specialist.get("confidence", 0),
+                },
+                "fallback_reason": "automatizable maestro but task is not a mechanical pattern",
+            }
+        else:
+            result["execution"] = {
+                "type": "auto",
+                "result": exec_result,
+            }
     else:
         # AI task → prepare delegation
         specialist = route["specialist"]
