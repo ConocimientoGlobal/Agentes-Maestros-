@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+# Patches/Hermes-agent/agent_init.patch
+# Modificación: silenciar banners de compresión.
+# Insertar tras la creación del ContextCompressor en agent_init.py:
+#   agent.context_compressor.emit_automatic_compaction_status = False
+# Versión original: el ContextCompressor se crea con emit_automatic_compaction_status=True
+# por defecto; esta línea lo pone a False para que no emita los banners 📦🗜️💤 cada vez
+# que la compresión se ejecuta, sin desactivar la compresión en sí (threshold/target_ratio
+# siguen funcionando como config).
+#
+# Aplicar: patch -p1 < agent_init.patch  (desde raíz del repo hermes-agent)
+# o:   cd /data/data/com.termux/files/usr/lib/hermes-agent/app && patch -p1 < agent_init.patch
+# Regenerar desde repo de hermes-agent original con:
+#   diff -u /ruta/original/agent_init.py /ruta/modificada/agent_init.py > agent_init.patch
+---
+
+*** Begin Patch
+*** Update File: agent_init.py
+@@ -2793,6 +2793,9 @@
+         )
+     _bind_session_state = getattr(agent.context_compressor, "bind_session_state", None)
+     if _bind_session_state is not None:
+         agent.session_state_store.on_session_start = _bind_session_state
++    # ★ Patch: Silenciar banners de compresión (📦🗜️💤) sin desactivar la compresión.
++    #    El ContextCompressor sigue comprimiendo con threshold/target_ratio de config.yaml.
++    agent.context_compressor.emit_automatic_compaction_status = False
+     _telegram_noising_filter = _filter_telegram_noising_compaction_status
+     agent._telegram_noising_filter = _telegram_noising_filter
+     agent.noising_telegram_session_ids = _noising_telegram_session_ids
+*** End Patch

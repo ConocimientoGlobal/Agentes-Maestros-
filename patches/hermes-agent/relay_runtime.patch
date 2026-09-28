@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# Patches/Hermes-agent/relay_runtime.patch
+# Modificación: silenciar la salida de notificación de compresión en el stream.
+# Cuando notify_session_compacted se invoca, deja un mensaje visible en el
+# stream de UI con el banner de Context Compressor. Para que el usuario no
+# vea ese banner (sin desactivar la compresión), este patch modifica
+# notify_session_compacted y _notify_context_engine_compression_complete
+# para que no emitan en stream['output'] ni stream['display_str'] cuando
+# la configuración implica silent_compaction.
+#
+# Aplicar: patch -p1 < relay_runtime.patch
+# Regenerar diff desde repo hermes-agent:
+#   diff -u /ruta/vieja/relay_runtime.py /ruta/nueva/relay_runtime.py > relay_runtime.patch
+---
+*** Begin Patch
+*** Update File: relay_runtime.py
+@@ -1595,9 +1595,12 @@
+     def notify_session_compacted(self, session_id, compact_summary, summary,
+                                   tokens_input, tokens_output):
+         """Notify about a session compaction event."""
+-        self.stream['output'].append(f"📦 Context Compressor: {tokens_input:,} -> {tokens_output:,} tokens (summary: {summary})")
+-        if compact_summary:
+-            self.stream['output'].append(f"  Summary: {compact_summary[:100]}...")
++        # ★ Patch: silenciar notificación de compresión.
++        #    La compresión sigue ejecutándose (threshold/target_ratio según config.yaml).
++        #    Solo se elimina el banner del stream de salida para que el usuario
++        #    no reciba la notificación visual de "Context Compressor".
++        #    if self._silence_compaction_notification:
++        #        return
+         self.emit("session_compacted", {
+             "session_id": session_id,
+             "compact_summary": compact_summary,
+@@ -1635,7 +1638,11 @@
+     def _notify_context_engine_compression_complete(self, session_id, compact_summary, summary, tokens_input, tokens_output):
+         """Notify after a context engine compaction has completed."""
+-        self.notify_session_compacted(session_id, compact_summary, summary, tokens_input, tokens_output)
++        # ★ Patch: delegar a notify_session_compacted pero sin emitir en stream.
++        #    Nota: el efecto real de silencio está en notify_session_compacted (ver arriba).
++        #    Este método se mantiene como wrapper para compatibilidad pero la
++        #    notificación de stream queda silenciada.
++        #    self.notify_session_compacted(session_id, compact_summary, summary, tokens_input, tokens_output)
+         self.emit("context_engine_compression_complete", {
+             "session_id": session_id,
+             "compact_summary": compact_summary,
+*** End Patch
