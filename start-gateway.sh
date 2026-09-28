@@ -1,7 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/bash
-# Lanzar Hermes Gateway con Telegram configurado
+# start-gateway.sh — Lanzador de Hermes Gateway con Telegram
+#
+# Configura variables de entorno y ejecuta el gateway.
+# Edita TELEGRAM_ALLOWED_USERS e HERMES_SKIN según tu setup.
+#
+# Uso: ./start-gateway.sh
 
-export TELEGRAM_ALLOWED_USERS="-1004495266986,6040085088"
+export TELEGRAM_ALLOWED_USERS="-10044952666986,6040085088"
 export HERMES_ACCEPT_HOOKS="1"
 export HERMES_SKIN="kemur-ai"
 

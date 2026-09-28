@@ -1,8 +1,51 @@
 # config.example.yaml
+#───────────────────────────────────────────────────────────────
+# Plantilla de configuración para Hermes Agent.
+# Copiá este archivo a ~/.hermes/config.yaml y completá los
+# valores requeridos (token, IDs de Telegram).
 #
-# Copy this file to ~/.hermes/config.yaml and fill in the required values.
+# Este archivo es PÚBLICO — no incluyas secrets (tokens,
+# passwords) en el repo.
 #
-# Required sections:
-#   - telegram.token: your bot token from @BotFather
-#   - telegram.allowed_users: your Telegram user or group IDs
-...[truncated]
+# ── Plataforma ──
+platform: telegram
+
+# ── Telegram ──
+telegram:
+  # Token de bot de @BotFather. Reemplazá el placeholder:
+  token: "REEMPLAZA_CON_TU_TOKEN_DE_BOTFATHER"
+  # IDs de Telegram autorizados (grupos y/o usuarios):
+  allowed_users:
+    - -10044952666986   # grupo principal (ejemplo)
+    - 6040085088        # usuario admin (ejemplo)
+
+# ── Skin ──
+skin: kemur-ai   # skin por defecto; cambiá si necesitás otra
+
+# ── Compresión de contexto ──
+compression:
+  threshold: 0.50       # umbral de compresión (0.0–1.0)
+  micro_compact: false  # compactación extrema (off por defecto)
+
+# ── Plugins ──
+plugins:
+  - name: hermes_bridge
+    class: hermes_bridge.HermesBridge
+  - name: neural_fellowship
+    class: neural_fellowship.NeuralFellowship
+  - name: monitor
+    class: monitor.Monitor
+
+# ── Hooks ──
+hooks: []
+
+# ── Allowed users (global, por plataforma) ──
+allowed_users:
+  - -10044952666986
+  - 6040085088
+
+# ── Config overrides (opcional) ──
+# Podés anular cualquier valor desde aquí:
+# config_overrides:
+#   platforms.telegram.token: "TU_TOKEN"
+#   skin: otra_skin

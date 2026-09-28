@@ -25,15 +25,18 @@ Thumbs.db
 *.log
 orchestrator-logs/
 
-# State files (generated locally)
-executor_state.json
-agent_queue.json
-_detection_report.json
-# Hermes local (generated/state files stay local; example configs are versioned)
-.hermes/token*
-.hermes/bot_token*
+# Hermes local generated/state files (NEVER commit secrets):
+# Ignore individual secret/state files only — do NOT ignore the whole .hermes/ dir
+# so that example configs can be versioned.
+.hermes/token
+.hermes/token.*
+.hermes/bot_token
+.hermes/bot_token.*
 .hermes/state.db
 .hermes/*.log
 .hermes/gateway_state.json
 .hermes/sessions/
 .hermes/cache/
+
+# Explicitly allow example configs inside .hermes/ (they are NOT secrets)
+# .hermes/config.example.yaml  ← tracked explicitly; not ignored above
