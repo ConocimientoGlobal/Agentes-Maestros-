@@ -17,6 +17,8 @@ Funciones:
   - remember(agent_id, error, context, solution) -> dict
   - recall_lessons(agent_id) -> list
   - get_system_status() -> dict
+  - build_capability_index() -> dict (genera capability_index.json)
+  - query_capability(capacidad) -> dict (consulta el índice)
 """
 
 import sys

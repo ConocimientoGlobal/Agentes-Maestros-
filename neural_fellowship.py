@@ -1681,6 +1681,38 @@ def main():
         for r in resultados[:10]:
             print(f"  • {r.get('error', r.get('a', ''))}")
 
+    elif args.capabilities:
+        print("📋 CATÁLOGO DE CAPACIDADES")
+        print("=" * 60)
+        capa_file = STATE_DIR / "capability_index.json"
+        if not capa_file.exists():
+            print("  ⚠ Índice de capacidades no generado. Ejecutar con --build-cap-index primero.")
+        else:
+            import json as _json
+            idx = _json.loads(capa_file.read_text(encoding="utf-8"))
+            query = args.capabilities.lower()
+            matches = {k: v for k, v in idx.items() if query in k.lower()}
+            print(f"  {len(matches)} capacidades matching '{query}' de {len(idx)} totales")
+            for cap, data in sorted(matches.items())[:20]:
+                agents = list(data['agentes'].keys())
+                masters = list(data['maestros'].keys())
+                print(f"  • {cap}")
+                print(f"      agentes: {agents}")
+                print(f"      maestros: {masters}")
+            if len(matches) > 20:
+                print(f"  ... y {len(matches) - 20} más")
+
+    elif args.build_cap_index:
+        print("🔨 Construyendo índice de capacidades...")
+        from hermes_bridge import build_capability_index  # noqa: F401
+        idx_file = STATE_DIR / "capability_index.json"
+        if idx_file.exists():
+            import json as _json
+            idx = _json.loads(idx_file.read_text(encoding="utf-8"))
+            print(f"  ✅ Índice listo: {len(idx)} capacidades → state/capability_index.json")
+        else:
+            print("  ❌ Error: no se pudo construir el índice.")
+
     elif args.lesson:
         parts = args.lesson.split(":", 3)
         if len(parts) == 4:
