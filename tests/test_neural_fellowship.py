@@ -812,3 +812,62 @@ class TestQueueManager:
 
         queue.complete("task_1", "done")
         assert queue.queue[0]['status'] == 'completed'
+
+
+# ===========================================================================
+# REGRESIÓN — FASE 1: bugs críticos (paths de persistencia + catálogo unificado)
+# ===========================================================================
+
+class TestRegresionFase1:
+    def test_state_dir_es_escribible(self):
+        """STATE_DIR debe existir y ser escribible (antes apuntaba a ~/references inexistente)."""
+        import neural_fellowship as nf
+        assert nf.STATE_DIR.exists(), "STATE_DIR no existe"
+        assert nf.STATE_DIR.is_dir()
+        probe = nf.STATE_DIR / ".write_probe"
+        probe.write_text("ok", encoding="utf-8")
+        assert probe.read_text(encoding="utf-8") == "ok"
+        probe.unlink()
+
+    def test_persistencia_memoria_y_aprendizaje(self):
+        """Guardar y releer desde disco (el bug original lanzaba FileNotFoundError)."""
+        from neural_fellowship import MemorySystem, LearningSystem
+        MemorySystem().conectar("regresion", "persistencia", "verifica", 5)
+        LearningSystem().record_error("NEXUS", "RegresionError", "ctx", "fix")
+        # Instancias nuevas deben ver lo persistido
+        assert any(c.get("a") == "regresion" for c in MemorySystem().index["conexiones"])
+        assert any(l.get("error") == "RegresionError" for l in LearningSystem().lessons)
+
+    def test_catalogo_carga_243_especialistas(self):
+        """El catálogo debe venir del JSON (243), no del fallback embebido (~96)."""
+        from neural_fellowship import AGENTES_ESPECIALIZADOS
+        assert len(AGENTES_ESPECIALIZADOS) == 243, f"esperado 243, hay {len(AGENTES_ESPECIALIZADOS)}"
+
+    def test_especialistas_sin_typo_capcidades(self):
+        """Ninguna entrada normalizada debe conservar la clave 'capcidades'."""
+        from neural_fellowship import AGENTES_ESPECIALIZADOS
+        for aid, info in AGENTES_ESPECIALIZADOS.items():
+            assert "capcidades" not in info, f"typo en {aid}"
+            assert "capacidades" in info
+
+    def test_rm_no_esta_en_whitelist(self):
+        """FIX seguridad: AutoExecutor no debe exponer 'rm'."""
+        from neural_fellowship import AutoExecutor
+        assert "rm" not in AutoExecutor.SAFE_COMMANDS
+
+    def test_routing_ve_especialistas_del_json(self):
+        """El routing debe resolver especialistas que solo existen en el JSON."""
+        from neural_fellowship import Orquestador
+        r = Orquestador().ruta_completa("optimizar query SQL postgres")
+        assert r["maestro"]["maestro"] == "NEXUS"
+        assert r["especialista"]["especialista"] is not None
+
+    def test_shims_reexportan_clases_consolidadas(self):
+        """Los módulos legacy deben re-exportar las clases del núcleo, no duplicarlas."""
+        import neural_fellowship as nf
+        from memory_system import MemorySystem as MS
+        from learning_system import LearningSystem as LS
+        from orchestrator import Orchestrator as O
+        assert MS is nf.MemorySystem
+        assert LS is nf.LearningSystem
+        assert O is nf.Orchestrator
