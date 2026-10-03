@@ -1587,6 +1587,8 @@ def main():
     parser.add_argument("--memory", type=str, help="Buscar en memoria")
     parser.add_argument("--lesson", type=str, metavar="AGENT:ERROR:CTX:SOL", help="Registrar lección")
     parser.add_argument("--orchestrate", type=str, help="Iniciar orquestación de tarea")
+    parser.add_argument("--capabilities", type=str, help="Buscar capacidades")
+    parser.add_argument("--build-cap-index", action="store_true", help="Construir índice de capacidades")
 
     args = parser.parse_args()
 
@@ -1684,27 +1686,24 @@ def main():
     elif args.capabilities:
         print("📋 CATÁLOGO DE CAPACIDADES")
         print("=" * 60)
-        capa_file = STATE_DIR / "capability_index.json"
-        if not capa_file.exists():
-            print("  ⚠ Índice de capacidades no generado. Ejecutar con --build-cap-index primero.")
-        else:
-            import json as _json
-            idx = _json.loads(capa_file.read_text(encoding="utf-8"))
-            query = args.capabilities.lower()
-            matches = {k: v for k, v in idx.items() if query in k.lower()}
-            print(f"  {len(matches)} capacidades matching '{query}' de {len(idx)} totales")
-            for cap, data in sorted(matches.items())[:20]:
-                agents = list(data['agentes'].keys())
-                masters = list(data['maestros'].keys())
-                print(f"  • {cap}")
-                print(f"      agentes: {agents}")
-                print(f"      maestros: {masters}")
-            if len(matches) > 20:
-                print(f"  ... y {len(matches) - 20} más")
+        from hermes_bridge import get_capability_index
+        idx = get_capability_index()
+        query = args.capabilities.lower()
+        matches = {k: v for k, v in idx.items() if query in k.lower()}
+        print(f"  {len(matches)} capacidades matching '{query}' de {len(idx)} totales")
+        for cap, data in sorted(matches.items())[:20]:
+            agents = list(data['agentes'].keys())
+            masters = list(data['maestros'].keys())
+            print(f"  • {cap}")
+            print(f"      agentes: {agents}")
+            print(f"      maestros: {masters}")
+        if len(matches) > 20:
+            print(f"  ... y {len(matches) - 20} más")
 
     elif args.build_cap_index:
         print("🔨 Construyendo índice de capacidades...")
-        from hermes_bridge import build_capability_index  # noqa: F401
+        from hermes_bridge import build_capability_index
+        build_capability_index()
         idx_file = STATE_DIR / "capability_index.json"
         if idx_file.exists():
             import json as _json

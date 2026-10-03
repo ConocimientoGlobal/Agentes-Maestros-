@@ -279,25 +279,25 @@ def get_system_status() -> dict:
         orch_status = orch.get_status()
     except Exception as e:
         orch_status = {"error": str(e)}
-    
+
     try:
         mem = MemorySystem()
         mem_stats = mem.get_stats()
     except Exception as e:
         mem_stats = {"error": str(e)}
-    
+
     try:
         ls = LearningSystem()
         learn_stats = ls.get_stats()
     except Exception as e:
         learn_stats = {"error": str(e)}
-    
+
     try:
         detector = DetectorTareas()
         task_stats = detector.get_stats()
     except Exception as e:
         task_stats = {"error": str(e)}
-    
+
     return {
         "orchestrator": orch_status,
         "memory": mem_stats,
@@ -307,6 +307,65 @@ def get_system_status() -> dict:
         "agentes_especializados": len(AGENTES_ESPECIALIZADOS),
         "timestamp": datetime.now().isoformat(),
     }
+
+
+def build_capability_index() -> dict:
+    """Build inverted index: capability -> {agents, maestros} from agent_directory.json."""
+    from collections import defaultdict
+
+    repo = REPO_PATH
+    dir_file = repo / "agent_directory.json"
+    if not dir_file.exists():
+        return {}
+
+    data = json.loads(dir_file.read_text(encoding="utf-8"))
+    especialistas = data.get("especialistas", {})
+
+    cap_to_agents = defaultdict(dict)
+    cap_to_maestros = defaultdict(float)
+
+    for esp_id, esp_data in especialistas.items():
+        caps = esp_data.get("capacidades", [])
+        maestro = esp_data.get("maestro", "")
+        for cap in caps:
+            key = cap.lower().strip()
+            cap_to_agents[key][esp_id] = {"source": "json", "peso": 1.0}
+            if maestro:
+                cap_to_maestros[key] += 0.5
+
+    index = {}
+    for cap, agents in cap_to_agents.items():
+        maestros_dict = {}
+        for m, w in cap_to_maestros.items():
+            if m:
+                maestros_dict[m] = w
+        index[cap] = {"agentes": agents, "maestros": maestros_dict}
+
+    out = repo / "state" / "capability_index.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
+    return index
+
+
+def query_capability(capacidad: str) -> dict:
+    """Query the capability index for a single capability."""
+    idx = get_capability_index()
+    key = capacidad.lower().strip()
+    if key in idx:
+        return {key: idx[key]}
+    # fuzzy: substring match
+    matches = {k: v for k, v in idx.items() if key in k}
+    if not matches:
+        return {}
+    return matches
+
+
+def get_capability_index() -> dict:
+    """Load capability_index.json from state directory."""
+    idx_file = REPO_PATH / "state" / "capability_index.json"
+    if not idx_file.exists():
+        return {}
+    return json.loads(idx_file.read_text(encoding="utf-8"))
 
 
 # ============================================================================
@@ -360,7 +419,18 @@ if __name__ == "__main__":
     
     # status
     subparsers.add_parser("status", help="System status")
-    
+
+    # capabilities
+    cap_parser = subparsers.add_parser("capabilities", help="Search capabilities")
+    cap_parser.add_argument("query", nargs="?", help="Search query")
+
+    # build-cap-index
+    subparsers.add_parser("build-cap-index", help="Build capability index")
+
+    # cap-query
+    capq_parser = subparsers.add_parser("cap-query", help="Query capability index")
+    capq_parser.add_argument("capacidad", help="Capability name")
+
     args = parser.parse_args()
     
     if args.command == "route":
@@ -382,6 +452,20 @@ if __name__ == "__main__":
         result = search_memory(args.query)
     elif args.command == "status":
         result = get_system_status()
+    elif args.command == "capabilities":
+        from hermes_bridge import get_capability_index
+        idx = get_capability_index()
+        q = (args.query or "").lower()
+        matches = {k: v for k, v in idx.items() if q in k} if q else idx
+        for k, v in sorted(matches.items())[:20]:
+            print(f"  • {k} → {len(v['agentes'])} agents, {len(v['maestros'])} maestros")
+    elif args.command == "build-cap-index":
+        from hermes_bridge import build_capability_index
+        idx = build_capability_index()
+        print(f"✅ Built index: {len(idx)} capabilities")
+    elif args.command == "cap-query":
+        from hermes_bridge import query_capability
+        result = query_capability(args.capacidad) or {"message": "No match"}
     else:
         parser.print_help()
         sys.exit(1)
