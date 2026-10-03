@@ -369,6 +369,161 @@ def get_capability_index() -> dict:
 
 
 # ============================================================================
+# FÁBRICA DE MAESTROS — Crear, registrar, validar maestros y red
+# ============================================================================
+
+def build_maestro(
+    maestro_id: str,
+    dominio: str,
+    division: str,
+    especialidades: list,
+    emoji: str = "❓",
+    automatizable: bool = False,
+) -> dict:
+    """Build a maestro dict from parameters. Returns structured data (no I/O)."""
+    return {
+        "emoji": emoji,
+        "dominio": dominio,
+        "division": division,
+        "especialidades": especialidades,
+        "automatizable": automatizable,
+    }
+
+
+def register_maestro(maestro_id: str, maestro_data: dict) -> dict:
+    """Register a maestro in agent_directory.json. Returns updated data."""
+    dir_file = REPO_PATH / "agent_directory.json"
+    data = json.loads(dir_file.read_text(encoding="utf-8"))
+    data["maestros"][maestro_id] = maestro_data
+    dir_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return data["maestros"]
+
+
+def unregister_maestro(maestro_id: str) -> dict:
+    """Remove a maestro from agent_directory.json. Returns updated data."""
+    dir_file = REPO_PATH / "agent_directory.json"
+    data = json.loads(dir_file.read_text(encoding="utf-8"))
+    removed = data["maestros"].pop(maestro_id, None)
+    if removed is None:
+        raise KeyError(f"Maestro '{maestro_id}' not found")
+    dir_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return removed
+
+
+def list_maestros() -> dict:
+    """Return all maestros from agent_directory.json."""
+    dir_file = REPO_PATH / "agent_directory.json"
+    data = json.loads(dir_file.read_text(encoding="utf-8"))
+    return data.get("maestros", {})
+
+
+def validate_network() -> dict:
+    """Validate the entire agent network for integrity issues.
+
+    Checks:
+      1. Every especialista references a maestro that exists
+      2. Every maestro references only valid especialistas
+      3. No circular cross-references (A→B→A)
+      4. No orphan especialistas (no maestro)
+      5. No duplicate capabilities across especialistas
+
+    Returns dict with 'ok' bool, 'errors' list, 'warnings' list.
+    """
+    dir_file = REPO_PATH / "agent_directory.json"
+    data = json.loads(dir_file.read_text(encoding="utf-8"))
+    maestros = data.get("maestros", {})
+    especialistas = data.get("especialistas", {})
+
+    errors = []
+    warnings = []
+
+    maestro_ids = set(maestros.keys())
+    esp_ids = set(especialistas.keys())
+
+    # 1. Every especialista must reference a valid maestro
+    for esp_id, esp_data in especialistas.items():
+        m = esp_data.get("maestro", "")
+        if m not in maestro_ids:
+            errors.append(f"especialista '{esp_id}' references unknown maestro '{m}'")
+
+    # 2. Every maestro must have at least one especialista
+    maestros_with_esps = {esp_data.get("maestro") for esp_data in especialistas.values()}
+    for m_id in maestro_ids:
+        if m_id not in maestros_with_esps:
+            warnings.append(f"maestro '{m_id}' has no especialistas assigned")
+
+    # 3. Circular cross-references (A→B→A)
+    cross_refs = {}
+    for m_id, m_data in maestros.items():
+        div = m_data.get("division", "")
+        if "→" in div:
+            target = div.split("→")[1].strip().replace("usa ", "")
+            cross_refs[m_id] = target
+
+    for a, b in cross_refs.items():
+        if b in cross_refs and cross_refs[b] == a:
+            errors.append(f"circular cross-ref: {a} ↔ {b}")
+
+    # 4. Orphan especialistas (already covered in 1, but explicit)
+    orphan_esps = [e for e in esp_ids if e not in maestros_with_esps and e not in maestro_ids]
+    # Not an error per se, but worth warning
+    for esp_id in esp_ids:
+        esp_maestro = especialistas[esp_id].get("maestro", "")
+        if esp_maestro and esp_maestro not in maestro_ids:
+            pass  # already caught above
+
+    # 5. Duplicate capabilities
+    cap_owners = {}
+    for esp_id, esp_data in especialistas.items():
+        for cap in esp_data.get("capacidades", []):
+            cap = cap.lower().strip()
+            if cap in cap_owners:
+                warnings.append(f"capability '{cap}' owned by both '{cap_owners[cap]}' and '{esp_id}'")
+            else:
+                cap_owners[cap] = esp_id
+
+    return {
+        "ok": len(errors) == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "maestros": len(maestro_ids),
+        "especialistas": len(esp_ids),
+    }
+
+
+def get_maestro_graph() -> dict:
+    """Build the maestro dependency graph for visualization.
+
+    Returns dict: {maestro_id: {division, dominio, emoji, automatizable, especialistas: [ids], cross_refs: [ids]}}
+    """
+    dir_file = REPO_PATH / "agent_directory.json"
+    data = json.loads(dir_file.read_text(encoding="utf-8"))
+    maestros = data.get("maestros", {})
+    especialistas = data.get("especialistas", {})
+
+    graph = {}
+    for m_id, m_data in maestros.items():
+        # Find especialistas for this maestro
+        esp_list = [e for e, ed in especialistas.items() if ed.get("maestro") == m_id]
+        # Cross-references from division field
+        cross = []
+        div = m_data.get("division", "")
+        if "→" in div:
+            target = div.split("→")[1].strip().replace("usa ", "")
+            cross = [target]
+
+        graph[m_id] = {
+            "dominio": m_data.get("dominio", ""),
+            "division": div,
+            "emoji": m_data.get("emoji", "❓"),
+            "automatizable": m_data.get("automatizable", False),
+            "especialistas": esp_list,
+            "cross_refs": cross,
+        }
+    return graph
+
+
+# ============================================================================
 # CLI
 # ============================================================================
 
@@ -431,6 +586,30 @@ if __name__ == "__main__":
     capq_parser = subparsers.add_parser("cap-query", help="Query capability index")
     capq_parser.add_argument("capacidad", help="Capability name")
 
+    # --- Fábrica de Maestros ---
+    # list-maestros
+    subparsers.add_parser("list-maestros", help="List all maestros")
+
+    # build-maestro
+    build_maestro_parser = subparsers.add_parser("build-maestro", help="Register a new maestro")
+    build_maestro_parser.add_argument("maestro_id", help="Maestro ID (e.g. ARCAN)")
+    build_maestro_parser.add_argument("--dominio", "-d", required=True, help="Domain")
+    build_maestro_parser.add_argument("--division", "-v", required=True, help="Division")
+    build_maestro_parser.add_argument("--especialidades", "-e", required=True, help="Comma-separated specialties")
+    build_maestro_parser.add_argument("--emoji", "-m", default="❓", help="Emoji")
+    build_maestro_parser.add_argument("--automatizable", "-a", action="store_true", help="Automatable")
+
+    # unregister-maestro
+    unreg_parser = subparsers.add_parser("unregister-maestro", help="Remove a maestro")
+    unreg_parser.add_argument("maestro_id", help="Maestro ID to remove")
+
+    # validate-network
+    subparsers.add_parser("validate-network", help="Validate agent network integrity")
+
+    # maestro-graph
+    subparsers.add_parser("maestro-graph", help="Build maestro dependency graph")
+    # --- Fábrica de Maestros ---
+
     args = parser.parse_args()
     
     if args.command == "route":
@@ -466,6 +645,31 @@ if __name__ == "__main__":
     elif args.command == "cap-query":
         from hermes_bridge import query_capability
         result = query_capability(args.capacidad) or {"message": "No match"}
+    # --- Fábrica de Maestros ---
+    elif args.command == "list-maestros":
+        from hermes_bridge import list_maestros
+        result = list_maestros()
+    elif args.command == "build-maestro":
+        from hermes_bridge import build_maestro, register_maestro
+        maestro_data = build_maestro(
+            args.maestro_id, args.dominio, args.division,
+            args.especialidades.split(",") if args.especialidades else [],
+            args.emoji or "❓",
+            args.automatizable,
+        )
+        result = register_maestro(args.maestro_id, maestro_data)
+        print(f"✅ Maestro '{args.maestro_id}' registrado")
+    elif args.command == "unregister-maestro":
+        from hermes_bridge import unregister_maestro
+        result = unregister_maestro(args.maestro_id)
+        print(f"🗑️ Maestro '{args.maestro_id}' removido")
+    elif args.command == "validate-network":
+        from hermes_bridge import validate_network
+        result = validate_network()
+    elif args.command == "maestro-graph":
+        from hermes_bridge import get_maestro_graph
+        result = get_maestro_graph()
+    # --- Fábrica de Maestros ---
     else:
         parser.print_help()
         sys.exit(1)

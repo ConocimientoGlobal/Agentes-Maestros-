@@ -871,3 +871,139 @@ class TestRegresionFase1:
         assert MS is nf.MemorySystem
         assert LS is nf.LearningSystem
         assert O is nf.Orchestrator
+
+
+# ===========================================================================
+# Tests Fábrica de Maestros — hermes_bridge.py
+# ===========================================================================
+
+class TestFabricaMaestros:
+    """Tests para build_maestro, register_maestro, validate_network, get_maestro_graph."""
+
+    @pytest.fixture
+    def tmp_repo(self, tmp_path, monkeypatch):
+        """Crea un repo temporal con agent_directory.json y state/."""
+        state_dir = tmp_path / "state"
+        state_dir.mkdir()
+        monkeypatch.setenv("HERMES_AGENT_HOME", str(tmp_path))
+        return tmp_path
+
+    def test_build_maestro_crea_dict_valido(self):
+        from hermes_bridge import build_maestro
+        m = build_maestro("TEST", "dev", "coordinación", ["python", "bash"])
+        assert m["dominio"] == "dev"
+        assert m["division"] == "coordinación"
+        assert m["especialidades"] == ["python", "bash"]
+        assert m["emoji"] == "❓"
+        assert m["automatizable"] is False
+
+    def test_build_maestro_con_emoji(self):
+        from hermes_bridge import build_maestro
+        m = build_maestro("TEST", "dev", "coord", [], emoji="⚙")
+        assert m["emoji"] == "⚙"
+
+    def test_build_maestro_automatizable(self):
+        from hermes_bridge import build_maestro
+        m = build_maestro("TEST", "dev", "coord", [], automatizable=True)
+        assert m["automatizable"] is True
+
+    def test_register_y_list_maestros(self, tmp_repo, monkeypatch):
+        import json
+        from pathlib import Path
+        # Create minimal agent_directory.json
+        agent_dir = tmp_repo / "agent_directory.json"
+        agent_dir.write_text(json.dumps({"maestros": {}, "especialistas": {}}))
+        monkeypatch.setattr("hermes_bridge.REPO_PATH", tmp_repo)
+
+        from hermes_bridge import build_maestro, register_maestro, list_maestros
+        data = build_maestro("NEW", "test", "div", ["cap1"])
+        register_maestro("NEW", data)
+        maestros = list_maestros()
+        assert "NEW" in maestros
+        assert maestros["NEW"]["dominio"] == "test"
+
+    def test_unregister_maestro(self, tmp_repo, monkeypatch):
+        import json
+        from pathlib import Path
+        agent_dir = tmp_repo / "agent_directory.json"
+        agent_dir.write_text(json.dumps({
+            "maestros": {"OLD": {"dominio": "t", "division": "d", "especialidades": [], "emoji": "❓", "automatizable": False}},
+            "especialistas": {},
+        }))
+        monkeypatch.setattr("hermes_bridge.REPO_PATH", tmp_repo)
+
+        from hermes_bridge import unregister_maestro
+        removed = unregister_maestro("OLD")
+        assert removed["dominio"] == "t"
+
+    def test_unregister_maestro_inexistente(self, tmp_repo, monkeypatch):
+        import json
+        agent_dir = tmp_repo / "agent_directory.json"
+        agent_dir.write_text(json.dumps({"maestros": {}, "especialistas": {}}))
+        monkeypatch.setattr("hermes_bridge.REPO_PATH", tmp_repo)
+
+        from hermes_bridge import unregister_maestro
+        with pytest.raises(KeyError):
+            unregister_maestro("NONEXISTENT")
+
+    def test_validate_network_ok(self, tmp_repo, monkeypatch):
+        import json
+        agent_dir = tmp_repo / "agent_directory.json"
+        agent_dir.write_text(json.dumps({
+            "maestros": {"M1": {"dominio": "d", "division": "div", "especialidades": [], "emoji": "❓", "automatizable": False}},
+            "especialistas": {"E1": {"maestro": "M1", "capacidades": ["c1"]}},
+        }))
+        monkeypatch.setattr("hermes_bridge.REPO_PATH", tmp_repo)
+
+        from hermes_bridge import validate_network
+        result = validate_network()
+        assert result["ok"] is True
+        assert result["maestros"] == 1
+        assert result["especialistas"] == 1
+
+    def test_validate_network_orphan_especialista(self, tmp_repo, monkeypatch):
+        import json
+        agent_dir = tmp_repo / "agent_directory.json"
+        agent_dir.write_text(json.dumps({
+            "maestros": {},
+            "especialistas": {"E1": {"maestro": "NO_EXISTE", "capacidades": []}},
+        }))
+        monkeypatch.setattr("hermes_bridge.REPO_PATH", tmp_repo)
+
+        from hermes_bridge import validate_network
+        result = validate_network()
+        assert result["ok"] is False
+        assert len(result["errors"]) > 0
+
+    def test_validate_network_circular_ref(self, tmp_repo, monkeypatch):
+        import json
+        agent_dir = tmp_repo / "agent_directory.json"
+        agent_dir.write_text(json.dumps({
+            "maestros": {
+                "M1": {"dominio": "d", "division": "coordinación → usa M2", "especialidades": [], "emoji": "❓", "automatizable": False},
+                "M2": {"dominio": "d", "division": "coordinación → usa M1", "especialidades": [], "emoji": "❓", "automatizable": False},
+            },
+            "especialistas": {},
+        }))
+        monkeypatch.setattr("hermes_bridge.REPO_PATH", tmp_repo)
+
+        from hermes_bridge import validate_network
+        result = validate_network()
+        assert result["ok"] is False
+        assert any("circular" in e for e in result["errors"])
+
+    def test_get_maestro_graph(self, tmp_repo, monkeypatch):
+        import json
+        agent_dir = tmp_repo / "agent_directory.json"
+        agent_dir.write_text(json.dumps({
+            "maestros": {"M1": {"dominio": "dev", "division": "coordinación", "emoji": "⚙", "automatizable": True, "especialidades": []}},
+            "especialistas": {"E1": {"maestro": "M1", "capacidades": []}},
+        }))
+        monkeypatch.setattr("hermes_bridge.REPO_PATH", tmp_repo)
+
+        from hermes_bridge import get_maestro_graph
+        graph = get_maestro_graph()
+        assert "M1" in graph
+        assert graph["M1"]["dominio"] == "dev"
+        assert graph["M1"]["automatizable"] is True
+        assert graph["M1"]["especialistas"] == ["E1"]
