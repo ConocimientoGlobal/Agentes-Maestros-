@@ -5,8 +5,8 @@ NEURAL FELLOWSHIP — Red Neuronal de Agentes Autónomos (Consolidada)
 Sistema unificado de orquestación, routing, memoria y aprendizaje.
 
 Estructura:
-  - 63 Agentes Maestros (nodos de dominio)
-  - 85 Agentes Especializados (nodos hoja)
+  - 65 Agentes Maestros (nodos de dominio)
+  - 243 Agentes Especializados (nodos hoja, fuente: agent_directory.json)
   - Orquestador (routing + delegación)
   - Auto-Executor (tareas mecánicas)
   - Memory System (grafo + lecciones)
@@ -35,21 +35,27 @@ from typing import Optional
 # ============================================================================
 
 HOME = Path.home()
+REPO_ROOT = Path(__file__).resolve().parent          # raíz del repo (donde vive este archivo)
+STATE_DIR = REPO_ROOT / "state"                       # persistencia del sistema (git-ignored)
 KNOWLEDGE_DIR = HOME / "knowledge"
 PROJECTS_DIR = KNOWLEDGE_DIR / "_projects"
 ACTIVE_DIR = KNOWLEDGE_DIR / "_active"
 TODAY_FILE = KNOWLEDGE_DIR / "TODAY.md"
-QUEUE_FILE = HOME / "agency-agents" / "orchestrator-logs" / "agent_queue.json"
-STATE_FILE = HOME / "agency-agents" / "orchestrator-logs" / "executor_state.json"
-LOG_DIR = HOME / "agency-agents" / "orchestrator-logs"
-SKILL_DIR = Path(__file__).parent.parent
-AGENT_DIR = SKILL_DIR / "references" / "agent_directory.json"
-MEMORY_INDEX = SKILL_DIR / "references" / "memory_index.json"
-LESSONS_FILE = SKILL_DIR / "references" / "learned_lessons.json"
-ORCHESTRATOR_STATE = SKILL_DIR / "references" / "orchestrator_state.json"
+QUEUE_FILE = STATE_DIR / "agent_queue.json"
+STATE_FILE = STATE_DIR / "executor_state.json"
+LOG_DIR = STATE_DIR / "logs"
+SKILL_DIR = REPO_ROOT
+AGENT_DIR = REPO_ROOT / "agent_directory.json"        # FUENTE DE VERDAD del catálogo
+MEMORY_INDEX = STATE_DIR / "memory_index.json"
+LESSONS_FILE = STATE_DIR / "learned_lessons.json"
+ORCHESTRATOR_STATE = STATE_DIR / "orchestrator_state.json"
+
+# Fix (bug persistencia): antes STATE_DIR resolvía a ~/references/ (inexistente) y
+# cada _save_* lanzaba FileNotFoundError → memoria/aprendizaje nunca persistían.
+STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
-# 63 AGENTES MAESTROS — Nodos de Dominio
+# 65 AGENTES MAESTROS — Nodos de Dominio
 # ============================================================================
 
 AGENTES_MAESTROS = {
@@ -576,10 +582,13 @@ AGENTES_MAESTROS = {
 }
 
 # ============================================================================
-# AGENTES ESPECIALIZADOS — Nodos Hoja (85 agentes)
+# AGENTES ESPECIALIZADOS — Nodos Hoja
 # ============================================================================
+# FUENTE DE VERDAD: agent_directory.json (243 especialistas, mantenido a mano).
+# El dict de abajo queda solo como FALLBACK si el JSON falta o está corrupto.
+# Se conserva por compatibilidad y como red de seguridad offline.
 
-AGENTES_ESPECIALIZADOS = {
+_ESPECIALISTAS_FALLBACK = {
     # ARCAN — Creatividad
     "design-brand-guardian": {"maestro": "ARCAN", "capacidades": ["identidad-marca", "guía-estilo", "consistencia"]},
     "design-ui-designer": {"maestro": "ARCAN", "capacidades": ["interfaces", "componentes", "design-systems"]},
@@ -688,9 +697,33 @@ AGENTES_ESPECIALIZADOS = {
     "business-strategist": {"maestro": "MNEMOS", "capacidades": ["strategic-planning", "market-entry", "competitive-positioning"]},
 }
 
-# Fix typos in dictionary
-AGENTES_ESPECIALIZADOS["engineering-devops-automator"]["capacidades"] = ["cicd", "cloud-ops", "infrastructure"]
-AGENTES_ESPECIALIZADOS["experiment-tracker"]["capacidades"] = ["ab-test-design", "statistical-significance", "feature-flags"]
+# Fix typos en el fallback
+_ESPECIALISTAS_FALLBACK["engineering-devops-automator"]["capacidades"] = ["cicd", "cloud-ops", "infrastructure"]
+_ESPECIALISTAS_FALLBACK["experiment-tracker"]["capacidades"] = ["ab-test-design", "statistical-significance", "feature-flags"]
+
+
+def _cargar_catalogo() -> dict:
+    """Carga el catálogo unificado de especialistas.
+
+    Prioriza agent_directory.json (fuente de verdad, 243 especialistas).
+    Si falta o está corrupto, cae al fallback embebido.
+    Normaliza el typo histórico 'capcidades' -> 'capacidades'.
+    """
+    try:
+        data = json.loads(AGENT_DIR.read_text(encoding="utf-8"))
+        esp = data.get("especialistas", {})
+        if esp:
+            normalizado = {}
+            for aid, info in esp.items():
+                caps = info.get("capacidades") or info.get("capcidades") or []
+                normalizado[aid] = {"maestro": info.get("maestro"), "capacidades": list(caps)}
+            return normalizado
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        pass
+    return dict(_ESPECIALISTAS_FALLBACK)
+
+
+AGENTES_ESPECIALIZADOS = _cargar_catalogo()
 
 
 # ============================================================================
@@ -944,13 +977,13 @@ class DetectorTareas:
 class AutoExecutor:
     """Ejecuta tareas mecánicas de forma segura."""
 
-    # Comandos permitidos (whitelist)
+    # Comandos permitidos (whitelist) — solo los que el executor realmente implementa.
+    # FIX seguridad: se quitó "rm"/"rm -rf" (borrado recursivo) y se dejó solo lo usado.
     SAFE_COMMANDS = {
         "mkdir": ["mkdir", "-p"],
         "touch": ["touch"],
         "cp": ["cp", "-r"],
         "mv": ["mv"],
-        "rm": ["rm", "-rf"],
         "git_commit": ["git", "commit", "-m"],
         "git_push": ["git", "push"],
         "git_pull": ["git", "pull"],
@@ -1558,7 +1591,7 @@ def main():
     args = parser.parse_args()
 
     if args.maestros:
-        print("🎯 AGENTES MAESTROS (63)")
+        print(f"🎯 AGENTES MAESTROS ({len(AGENTES_MAESTROS)})")
         print("=" * 50)
         for mid, info in sorted(AGENTES_MAESTROS.items()):
             auto_str = "⚡auto" if info.get("automatizable") else "🧠ia"
