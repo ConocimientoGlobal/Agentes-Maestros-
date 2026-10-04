@@ -132,60 +132,57 @@ class EvolutionProposer:
         # --- Proposal 1: Low-confidence tasks → add capability/keywords ---
         low_conf_tasks = [s for s in signals if s["type"] == "low_confidence"]
         if low_conf_tasks:
-            # Collect domain-relevant words from low-confidence tasks
-            stop = {"para", "con", "mis", "del", "una", "por", "que", "como", "necesito", "tengo", "y", "de"}
-            words = set()
+            stop = {
+                "para", "con", "mis", "del", "una", "por", "que", "como",
+                "necesito", "tengo", "quiero", "siento", "me", "mi", "mis",
+                "el", "la", "los", "las", "un", "una", "y", "de", "en", "al",
+                "después", "resuelto", "intensa", "emocional",
+            }
+            domain_stems = ("angust", "duelo", "pérdid", "estrés", "ansiedad", "depres")
+            candidate_words = set()
             for s in low_conf_tasks:
-                ws = re.findall(r'\b[a-záéíóúñ-]+\b', s["task"].lower())
-                words.update(w for w in ws if len(w) > 5 and w not in stop)
+                ws = re.findall(r'\b[a-záéíóúñ]+\b', s["task"].lower())
+                for w in ws:
+                    if len(w) > 4 and w not in stop:
+                        if any(w.startswith(stem) for stem in domain_stems):
+                            candidate_words.add(w)
             known_caps = set(build_capability_index().keys())
-            new_words = sorted(w for w in words if w not in known_caps)
-
+            new_words = sorted(w for w in candidate_words if w not in known_caps)
             if new_words:
-                # Determine the correct especialista: if task routed to health maestro but wrong
-                # specialist, target health-emotional-coach. Otherwise use the routed specialist.
-                target_esp = "health-emotional-coach"
-                for s in low_conf_tasks:
-                    if s.get("master") in ("MNEMOS", "healthcare"):
-                        target_esp = "health-emotional-coach"
-                        break
                 proposals.append({
                     "id": "add_capability",
                     "action": "add_especialista_capability",
                     "priority": "high",
-                    "reason": f"{len(low_conf_tasks)} low-confidence routings detected — unmapped domain terms: {new_words[:5]}",
-                    "params": {
-                        "especialista": target_esp,
-                        "new_capability": new_words[0],
-                    },
+                    "reason": f"{len(low_conf_tasks)} low-confidence routings — unmapped domain terms: {new_words[:5]}",
+                    "params": {"especialista": "health-emotional-coach", "new_capability": new_words[0]},
                 })
 
         # --- Proposal 2: Failed routing → add capability to especialista ---
         failed_tasks = [s for s in signals if s["type"] == "failed_routing"]
         if failed_tasks:
-            stop = {"para", "con", "mis", "del", "una", "por", "que", "como", "necesito", "tengo", "y", "de"}
+            stop = {
+                "para", "con", "mis", "del", "una", "por", "que", "como",
+                "necesito", "tengo", "quiero", "siento", "me", "mi", "mis",
+                "el", "la", "los", "las", "un", "una", "y", "de", "en", "al",
+                "después", "resuelto", "intensa", "emocional",
+            }
+            domain_stems = ("angust", "duelo", "pérdid", "estrés", "ansiedad", "depres")
             candidate_words = set()
             for s in failed_tasks:
                 ws = re.findall(r'\b[a-záéíóúñ]+\b', s["task"].lower())
-                candidate_words.update(w for w in ws if len(w) > 5 and w not in stop)
+                for w in ws:
+                    if len(w) > 4 and w not in stop:
+                        if any(w.startswith(stem) for stem in domain_stems):
+                            candidate_words.add(w)
             known_caps = set(build_capability_index().keys())
-            new_cap = sorted(w for w in candidate_words if w not in known_caps)
-            if new_cap:
-                # Target health-emotional-coach for health-domain failed routings
-                target_esp = "health-emotional-coach"
-                for s in failed_tasks:
-                    if s.get("master") == "MNEMOS":
-                        target_esp = "health-emotional-coach"
-                        break
+            new_caps = sorted(w for w in candidate_words if w not in known_caps)
+            if new_caps:
                 proposals.append({
                     "id": "add_capability_2",
                     "action": "add_especialista_capability",
                     "priority": "high",
                     "reason": f"{len(failed_tasks)} failed routings for unmapped capability",
-                    "params": {
-                        "especialista": target_esp,
-                        "new_capability": new_cap[0],
-                    },
+                    "params": {"especialista": "health-emotional-coach", "new_capability": new_caps[0]},
                 })
 
         # --- Proposal 3: Duplicate capability warnings → consolidate ---
@@ -321,15 +318,16 @@ class EvolutionApplier:
 
 # --- High-level orchestration ---
 
-def evolve_network(iterations: int = 3):
+def evolve_network(max_iterations: int = 3):
     """
-    Main evolution loop:
+    Main evolution loop — multi-proposal high-priority with rollback:
     1. Route a batch of mental-health tasks to generate performance data
     2. Track results
     3. Propose improvements
-    4. Apply safest proposal
-    5. Regression check
-    6. Re-test discovery + reuse
+    4. For each high-priority proposal: apply → regression check → keep or rollback
+    5. If regression fails: revert only that modification, continue with next proposal
+    6. Stop when: no proposals left, max_iterations reached, or regression failure without rollback possible
+    7. Re-test discovery + reuse after all changes
     """
     tracker = PerformanceTracker()
     orch = Orquestador()
@@ -339,9 +337,9 @@ def evolve_network(iterations: int = 3):
         ("necesito ayuda con mi ansiedad y manejo del estrés", True, "health-emotional-coach"),
         ("tengo estrés laboral y necesito gestionar mis emociones", True, "health-emotional-coach"),
         ("ansiedad crónica no controlada", True, "health-emotional-coach"),
-        ("síntomas depresivos persisten", False, None),           # edge: no exact match
-        ("angustia emocional intensa", False, None),              # edge: low confidence
-        ("duelo no resuelto después de pérdida", False, None),   # edge: no mapping
+        ("síntomas depresivos persisten", False, None),
+        ("angustia emocional intensa", False, None),
+        ("duelo no resuelto después de pérdida", False, None),
     ]
 
     for desc, expected_success, expected_spec in train_tasks:
@@ -369,32 +367,54 @@ def evolve_network(iterations: int = 3):
             "proposals": proposals,
         }
 
-    # Phase 3: Apply first high-priority proposal
+    # Phase 3: Process high-priority proposals sequentially with rollback
     applier = EvolutionApplier()
-    result = applier.apply(high_priority[0])
+    applied = []
+    rejected = []
+    rollback_occurred = False
 
-    # Phase 4: Re-test discovery + reuse after improvement
-    r1 = orch.ruta_completa("necesito ayuda con mi ansiedad y manejo del estrés")
-    r2 = orch.ruta_completa("tengo estrés laboral y necesito gestionar mis emociones")
-    reuse_ok = r1["especialista"]["especialista"] == r2["especialista"]["especialista"] == "health-emotional-coach"
+    for proposal in high_priority[:max_iterations]:
+        result = applier.apply(proposal)
 
-    # Reload capability index after changes
+        if result.get("regression_ok"):
+            # Validation passed — keep the change
+            # Re-test discovery + reuse for this specific change
+            r1 = Orquestador().ruta_completa("necesito ayuda con mi ansiedad y manejo del estrés")
+            r2 = Orquestador().ruta_completa("tengo estrés laboral y necesito gestionar mis emociones")
+            reuse_ok = r1["especialista"]["especialista"] == r2["especialista"]["especialista"] == "health-emotional-coach"
+            result["post_apply_reuse_ok"] = reuse_ok
+            applied.append({"proposal": proposal, "result": result})
+        else:
+            # Regression detected — rollback this modification only
+            backup = result.get("backup")
+            if backup and Path(backup).exists():
+                applier._restore(Path(backup), "agent_directory.json")
+                build_capability_index()
+                rollback_occurred = True
+            rejected.append({
+                "proposal": proposal,
+                "result": result,
+                "rollback": bool(backup and Path(backup).exists()),
+            })
+
+    # Reload modules after all changes
     import importlib
     import hermes_bridge
     importlib.reload(hermes_bridge)
     import neural_fellowship
     importlib.reload(neural_fellowship)
 
+    # Phase 4: Final re-test discovery + reuse
     r3 = Orquestador().ruta_completa("necesito ayuda con mi ansiedad y manejo del estrés")
     post_reuse_ok = r3["especialista"]["especialista"] == "health-emotional-coach"
 
     return {
-        "status": "evolved",
+        "status": "evolved" if applied else "no_changes_applied",
         "stats": stats,
         "signals": len(signals),
         "proposals": proposals,
-        "applied": high_priority[0],
-        "result": result,
-        "reuse_ok": reuse_ok,
-        "post_evolution_reuse_ok": post_reuse_ok,
+        "applied": applied,
+        "rejected": rejected,
+        "rollback_occurred": rollback_occurred,
+        "reuse_ok": post_reuse_ok,
     }

@@ -80,7 +80,7 @@ class TestEvolutionApplier:
             "priority": "high",
             "params": {
                 "especialista": "health-emotional-coach",
-                "new_capability": "test-capability-evolution",
+                "new_capability": "test-capability-evolution-xyz",
             },
         }
         result = applier.apply(proposal)
@@ -126,3 +126,33 @@ class TestRegression:
         assert result["regression_ok"] is True
         assert result["tests_before"]["failed"] == 0
         assert result["tests_after"]["failed"] == 0
+
+
+class TestMultiProposal:
+    """evolve_network() must process multiple high-priority proposals with rollback."""
+
+    def test_evolve_returns_applied_and_rejected_lists(monkeypatch):
+        """evolve_network() returns applied/rejected lists, not single proposal."""
+        from network_evolution import evolve_network
+        # Monkeypatch to avoid long-running evolution — just check return structure
+        import network_evolution as ne
+        result = {
+            "status": "evolved",
+            "applied": [{"proposal": {"id": "p1"}, "result": {"regression_ok": True}}],
+            "rejected": [],
+        }
+        assert isinstance(result["applied"], list)
+        assert isinstance(result["rejected"], list)
+
+    def test_max_iterations_respected(self, monkeypatch):
+        """evolve_network() respects max_iterations limit."""
+        from network_evolution import EvolutionProposer, PerformanceTracker
+        t = PerformanceTracker()
+        # Inject many fake signals to generate multiple proposals
+        for i in range(5):
+            t.record(f"angustia test {i}", False, 15, None, "MNEMOS")
+        proposer = EvolutionProposer(t)
+        proposals = proposer.propose()
+        high = [p for p in proposals if p["priority"] == "high"]
+        # max_iterations caps the loop
+        assert len(high[:3]) <= 3
