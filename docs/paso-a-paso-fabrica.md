@@ -3,11 +3,21 @@
 ## Arquitectura
 
 ```
-maestro-fabrica/
-├── hermes_bridge.py          # Funciones core (build/register/unregister/validate/graph)
-├── fabrica_maestros.py       # CLI standalone
-├── hermes-skill/maestro-fabrica/SKILL.md  # Skill conversacional
-└── tests/test_neural_fellowship.py        # 10 tests TestFabricaMaestros
+Agentes-Maestros-/
+├── agent_directory.json         # Fuente de verdad (65 maestros, 243 especialistas)
+├── state/
+│   ├── capability_index.json    # Índice unificado de capacidades (681)
+│   ├── learned_lessons.json     # Lecciones aprendidas (FASE 5)
+│   └── memory_index.json        # Conexiones entre componentes (FASE 5)
+├── hermes_bridge.py             # Funciones core FASE 1-bis a 5
+├── neural_fellowship.py         # CLI principal (65 maestros + 243 especialistas)
+├── orquestar.py                 # Orquestador dinámico FASE 3
+├── autoeval.py                  # Autoevaluación FASE 5
+├── skill_autogen.py             # Autogeneración de skills FASE 4
+├── hermes-skill/                # 245 skills autogeneradas
+│   └── <specialist_id>/SKILL.md
+├── tests/test_neural_fellowship.py  # 112 tests
+└── docs/paso-a-paso-fabrica.md      # Este documento
 ```
 
 ## Pasos
@@ -42,9 +52,10 @@ python3 fabrica_maestros.py validate-network
 python3 fabrica_maestros.py maestro-graph
 ```
 
-### 6. Desregistrar
+### 7. Consultar capacidades
 ```bash
-python3 fabrica_maestros.py unregister-maestro COORD
+python3 neural_fellowship.py --capabilities --build-cap-index
+python3 neural_fellowship.py --cap-query "identidad-marca"
 ```
 
 ## Validación automática
