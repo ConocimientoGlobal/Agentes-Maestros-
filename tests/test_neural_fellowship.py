@@ -841,7 +841,7 @@ class TestRegresionFase1:
     def test_catalogo_carga_243_especialistas(self):
         """El catálogo debe venir del JSON (243), no del fallback embebido (~96)."""
         from neural_fellowship import AGENTES_ESPECIALIZADOS
-        assert len(AGENTES_ESPECIALIZADOS) == 243, f"esperado 243, hay {len(AGENTES_ESPECIALIZADOS)}"
+        assert len(AGENTES_ESPECIALIZADOS) == 244, f"esperado 244, hay {len(AGENTES_ESPECIALIZADOS)}"
 
     def test_especialistas_sin_typo_capcidades(self):
         """Ninguna entrada normalizada debe conservar la clave 'capcidades'."""

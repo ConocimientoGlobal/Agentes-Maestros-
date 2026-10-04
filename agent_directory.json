@@ -324,6 +324,15 @@
       "emoji": "👔",
       "dominio": "Coordinación Ejecutiva",
       "division": "cross → orquesta todos"
+    },
+    "GESTION-EMOCIONAL": {
+      "emoji": "❓",
+      "dominio": "MNEMOS",
+      "division": "Gestión emocional: ansiedad, estrés, bienestar",
+      "especialidades": {
+        "tipo": "salud-mental"
+      },
+      "automatizable": false
     }
   },
   "especialistas": {
@@ -2308,6 +2317,14 @@
         "technical-program",
         "cross-functional",
         "roadmap"
+      ]
+    },
+    "health-emotional-coach": {
+      "maestro": "MNEMOS",
+      "capacidades": [
+        "gestion-emocional",
+        "mental-health",
+        "terapia"
       ]
     }
   }

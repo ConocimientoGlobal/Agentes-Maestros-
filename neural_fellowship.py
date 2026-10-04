@@ -744,7 +744,8 @@ class Orquestador:
             "sales": ["venta", "propuesta", "cliente", "prospecto", "lead", "outbound", "crm"],
             "product": ["producto", "roadmap", "feature", "priorización", "sprint", "jira", "confluence"],
             "game": ["juego", "game", "minecraft", "pokemon", "videojuego", "gamedev", "unity", "unreal"],
-            "health": ["salud", "médico", "bienestar", "fitness", "nutrición", "clínico", "terapia"],
+            "health": ["salud", "médico", "bienestar", "fitness", "nutrición", "clínico", "terapia", "ansiedad", "estrés", "emocional", "mental"],
+            "healthcare": ["salud", "médico", "bienestar", "fitness", "nutrición", "clínico", "terapia", "ansiedad", "estrés", "emocional", "mental"],
             "memory": ["memoria", "conocimiento", "lección", "aprendizaje", "documentación"],
             "creativity": ["creatividad", "arte", "diseño", "branding", "visual", "storytelling", "música", "video"],
             "commercial": ["comercial", "ventas", "marketing", "propuestas", "leads", "facturación"],
@@ -762,7 +763,7 @@ class Orquestador:
             "ARCAN": ["diseño", "ui", "ux", "figma", "sketch", "adobe", "illustrator", "photoshop", "branding", "logo", "paleta", "tipografía", "wireframe", "mockup", "prototipo", "animación", "motion"],
             "HELIOS": ["gis", "mapas", "leaflet", "mapbox", "openlayers", "geoserver", "postgis", "geoespacial", "cartografía", "drones", "satélite", "remote sensing"],
             "CRONUS": ["unity", "unreal", "godot", "game design", "minecraft", "modding", "pixel art", "shader", "level design", "narrativa"],
-            "MNEMOS": ["documentación", "wiki", "conocimiento", "onboarding", "sop", "proceso", "knowledge base"],
+            "MNEMOS": ["documentación", "wiki", "conocimiento", "onboarding", "sop", "proceso", "knowledge base", "ansiedad", "estrés", "emocional", "mental", "terapia", "salud"],
         }
         # Keywords de especialista por dominio (dominan sobre keywords de maestro)
         self.especialista_keywords = {
