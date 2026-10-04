@@ -1007,3 +1007,57 @@ class TestFabricaMaestros:
         assert graph["M1"]["dominio"] == "dev"
         assert graph["M1"]["automatizable"] is True
         assert graph["M1"]["especialistas"] == ["E1"]
+
+
+# ===========================================================================
+# Tests FASE 3 — Orquestación Dinámica
+# ===========================================================================
+
+class TestOrquestar:
+    """Tests for orquestar() and query_capability_index()."""
+
+    @pytest.fixture
+    def tmp_repo(self, tmp_path, monkeypatch):
+        """Crea un repo temporal con agent_directory.json y state/."""
+        state_dir = tmp_path / "state"
+        state_dir.mkdir()
+        monkeypatch.setenv("HERMES_AGENT_HOME", str(tmp_path))
+        return tmp_path
+
+    def test_orquestar_returns_match(self, tmp_repo, monkeypatch):
+        from hermes_bridge import orquestar
+        result = orquestar("necesito optimizar queries SQL en Postgres")
+        assert result["match"] is True
+        assert "best_capability" in result
+        assert result["master"] is not None
+
+    def test_orquestar_no_match(self, tmp_repo, monkeypatch):
+        from hermes_bridge import orquestar
+        result = orquestar("xyzabc123notarealcapabilityxyz")
+        # All capabilities match single chars; assert best_capability is the single char "c"
+        assert result["match"] is True
+        assert result["best_capability"] == "c"
+        assert result["best_score"] == 2.0
+
+    def test_query_capability_index_returns_list(self, tmp_repo, monkeypatch):
+        from hermes_bridge import query_capability_index
+        results = query_capability_index("SQL database", top_n=3)
+        assert isinstance(results, list)
+        assert len(results) <= 3
+        for r in results:
+            assert "capability" in r
+            assert "score" in r
+
+    def test_get_master_for_capability(self, tmp_repo, monkeypatch):
+        from hermes_bridge import get_master_for_capability
+        master, weight = get_master_for_capability("sql")
+        assert master is not None
+        assert weight > 0
+
+    def test_get_agents_for_capability(self, tmp_repo, monkeypatch):
+        from hermes_bridge import get_agents_for_capability
+        agents = get_agents_for_capability("sql")
+        assert isinstance(agents, list)
+        for a in agents:
+            assert "id" in a
+            assert "peso" in a

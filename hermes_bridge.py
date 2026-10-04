@@ -673,5 +673,138 @@ if __name__ == "__main__":
     else:
         parser.print_help()
         sys.exit(1)
-    
+
     print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+
+
+# ===========================================================================
+# Orquestación Dinámica — FASE 3
+# ===========================================================================
+
+_CAP_INDEX = REPO_PATH / "state" / "capability_index.json"
+_agent_dir = REPO_PATH / "agent_directory.json"
+
+def _load_json(path):
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text())
+
+def orquestar(task: str, top_n: int = 3) -> dict:
+    """Route a task to the best master + specialist via capability_index.
+
+    Returns:
+        {
+            "task": str,
+            "match": bool,
+            "best_capability": str | None,
+            "best_score": float,
+            "master": str | None,
+            "all_matches": [
+                {
+                    "capability": str,
+                    "score": float,
+                    "master": str | None,
+                    "master_weight": float,
+                    "specialists": [{"id": str, "source": str, "peso": float,
+                                     "maestro": str, "capacidades": [str]}]
+                },
+                ...
+            ]
+        }
+    """
+    idx = _load_json(_CAP_INDEX)
+    agent_dir = _load_json(_agent_dir)
+    task_lower = task.lower()
+    scores = []
+
+    for cap, cap_data in idx.items():
+        cap_lower = cap.lower()
+        if cap_lower in task_lower or task_lower in cap_lower:
+            score = 2.0
+        else:
+            cap_words = set(cap_lower.split("-"))
+            task_words = set(task_lower.split())
+            overlap = cap_words & task_words
+            score = len(overlap) / max(len(cap_words), 1) * 1.0
+        if score > 0:
+            agents = cap_data.get("agentes", {})
+            masters = cap_data.get("maestros", {})
+            specialists = []
+            for agent_id, agent_info in agents.items():
+                agent_meta = agent_dir.get("especialistas", {}).get(agent_id, {})
+                specialists.append({
+                    "id": agent_id,
+                    "source": agent_info.get("source", "unknown"),
+                    "peso": agent_info.get("peso", 0),
+                    "maestro": agent_meta.get("maestro"),
+                    "capacidades": agent_meta.get("capacidades", []),
+                })
+            specialists.sort(key=lambda x: x["peso"], reverse=True)
+            best_master = max(masters.items(), key=lambda x: x[1]) if masters else (None, 0)
+            scores.append({
+                "capability": cap,
+                "score": round(score, 3),
+                "master": best_master[0],
+                "master_weight": best_master[1],
+                "specialists": specialists[:5],
+            })
+
+    scores.sort(key=lambda x: (x["score"], x["master_weight"]), reverse=True)
+    if not scores:
+        return {"task": task, "match": False, "message": "No capabilities matched"}
+    return {
+        "task": task,
+        "match": True,
+        "best_capability": scores[0]["capability"],
+        "best_score": scores[0]["score"],
+        "master": scores[0]["master"],
+        "all_matches": scores[:top_n],
+    }
+
+
+def query_capability_index(task_text: str, top_n: int = 5) -> list:
+    """Search capabilities by keyword overlap. Returns list of dicts."""
+    idx = _load_json(_CAP_INDEX)
+    task_lower = task_text.lower()
+    results = []
+    for cap, data in idx.items():
+        cap_lower = cap.lower()
+        if cap_lower in task_lower or task_lower in cap_lower:
+            score = 2.0
+        else:
+            cap_words = set(cap_lower.split("-"))
+            task_words = set(task_lower.split())
+            overlap = cap_words & task_words
+            score = len(overlap) / max(len(cap_words), 1) * 1.0
+        if score > 0:
+            results.append({"capability": cap, "score": round(score, 3)})
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return results[:top_n]
+
+
+def get_master_for_capability(capability: str) -> tuple:
+    """Return (master_id, weight) for a capability."""
+    idx = _load_json(_CAP_INDEX)
+    masters = idx.get(capability, {}).get("maestros", {})
+    if not masters:
+        return None, 0
+    return max(masters.items(), key=lambda x: x[1])
+
+
+def get_agents_for_capability(capability: str) -> list:
+    """Return list of specialist dicts for a capability."""
+    idx = _load_json(_CAP_INDEX)
+    agent_dir = _load_json(_agent_dir)
+    agents = idx.get(capability, {}).get("agentes", {})
+    results = []
+    for agent_id, info in agents.items():
+        meta = agent_dir.get("especialistas", {}).get(agent_id, {})
+        results.append({
+            "id": agent_id,
+            "source": info.get("source", "unknown"),
+            "peso": info.get("peso", 0),
+            "maestro": meta.get("maestro"),
+            "capacidades": meta.get("capacidades", []),
+        })
+    results.sort(key=lambda x: x["peso"], reverse=True)
+    return results
