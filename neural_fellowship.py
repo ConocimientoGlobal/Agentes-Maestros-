@@ -839,6 +839,14 @@ class Orquestador:
         best_match = None
         best_score = 0
 
+        # Keywords del maestro para fallback de scoring
+        maestro_kws = set()
+        if maestro:
+            for div_kw in self.routing_map.get(maestro, []):
+                maestro_kws.add(div_kw.lower())
+            for kw in self.maestro_keywords.get(maestro, []):
+                maestro_kws.add(kw.lower())
+
         for agent_id, info in AGENTES_ESPECIALIZADOS.items():
             if maestro and info["maestro"] != maestro:
                 continue
@@ -853,6 +861,13 @@ class Orquestador:
             # Bonus si el maestro coincide
             if info["maestro"] == maestro:
                 score += 10
+            # Fallback: keywords del maestro coinciden EXACTAMENTE en capacidades del especialista
+            if score > 0 and maestro_kws:
+                caps_list = [c.lower() for c in info.get("capacidades", [])]
+                for mk in maestro_kws:
+                    if mk in caps_list and len(mk) > 4:
+                        score += 8
+                        break
 
             if score > best_score:
                 best_score = score

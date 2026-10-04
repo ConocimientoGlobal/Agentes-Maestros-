@@ -2324,7 +2324,11 @@
       "capacidades": [
         "gestion-emocional",
         "mental-health",
-        "terapia"
+        "terapia",
+        "salud-emocional",
+        "ansiedad",
+        "estrés",
+        "bienestar-mental"
       ]
     }
   }
