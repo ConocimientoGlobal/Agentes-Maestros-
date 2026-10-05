@@ -44,7 +44,7 @@ class PerformanceTracker:
     def _save(self):
         PERF_HISTORY.write_text(json.dumps(self.history, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    def record(self, task_description: str, success: bool, confidence: int, specialist: str = None, master: str = None):
+    def record(self, task_description: str, success: bool, confidence: float, specialist: str = None, master: str = "unknown"):
         """Record a routing outcome."""
         entry = {
             "task": task_description,
@@ -128,17 +128,21 @@ class EvolutionProposer:
         """Generate improvement proposals. Returns list of dicts."""
         proposals = []
         signals = self.tracker.get_degradation_signals()
-
-        # --- Proposal 1: Low-confidence tasks → add capability/keywords ---
         low_conf_tasks = [s for s in signals if s["type"] == "low_confidence"]
+        failed_tasks = [s for s in signals if s["type"] == "failed_routing"]
+
+        stop = {
+            "para", "con", "mis", "del", "una", "por", "que", "como",
+            "necesito", "tengo", "quiero", "siento", "me", "mi", "mis",
+            "el", "la", "los", "las", "un", "una", "y", "de", "en", "al",
+            "después", "resuelto", "intensa", "emocional",
+        }
+        domain_stems = ("angust", "duelo", "pérdid", "estrés", "ansiedad", "depres")
+        known_caps = set(build_capability_index().keys())
+        orch = Orquestador()
+
+        # --- Proposal 1: Low-confidence → add capability or routing keywords ---
         if low_conf_tasks:
-            stop = {
-                "para", "con", "mis", "del", "una", "por", "que", "como",
-                "necesito", "tengo", "quiero", "siento", "me", "mi", "mis",
-                "el", "la", "los", "las", "un", "una", "y", "de", "en", "al",
-                "después", "resuelto", "intensa", "emocional",
-            }
-            domain_stems = ("angust", "duelo", "pérdid", "estrés", "ansiedad", "depres")
             candidate_words = set()
             for s in low_conf_tasks:
                 ws = re.findall(r'\b[a-záéíóúñ]+\b', s["task"].lower())
@@ -146,7 +150,6 @@ class EvolutionProposer:
                     if len(w) > 4 and w not in stop:
                         if any(w.startswith(stem) for stem in domain_stems):
                             candidate_words.add(w)
-            known_caps = set(build_capability_index().keys())
             new_words = sorted(w for w in candidate_words if w not in known_caps)
             if new_words:
                 proposals.append({
@@ -155,34 +158,6 @@ class EvolutionProposer:
                     "priority": "high",
                     "reason": f"{len(low_conf_tasks)} low-confidence routings — unmapped domain terms: {new_words[:5]}",
                     "params": {"especialista": "health-emotional-coach", "new_capability": new_words[0]},
-                })
-
-        # --- Proposal 2: Failed routing → add capability to especialista ---
-        failed_tasks = [s for s in signals if s["type"] == "failed_routing"]
-        if failed_tasks:
-            stop = {
-                "para", "con", "mis", "del", "una", "por", "que", "como",
-                "necesito", "tengo", "quiero", "siento", "me", "mi", "mis",
-                "el", "la", "los", "las", "un", "una", "y", "de", "en", "al",
-                "después", "resuelto", "intensa", "emocional",
-            }
-            domain_stems = ("angust", "duelo", "pérdid", "estrés", "ansiedad", "depres")
-            candidate_words = set()
-            for s in failed_tasks:
-                ws = re.findall(r'\b[a-záéíóúñ]+\b', s["task"].lower())
-                for w in ws:
-                    if len(w) > 4 and w not in stop:
-                        if any(w.startswith(stem) for stem in domain_stems):
-                            candidate_words.add(w)
-            known_caps = set(build_capability_index().keys())
-            new_caps = sorted(w for w in candidate_words if w not in known_caps)
-            if new_caps:
-                proposals.append({
-                    "id": "add_capability_2",
-                    "action": "add_especialista_capability",
-                    "priority": "high",
-                    "reason": f"{len(failed_tasks)} failed routings for unmapped capability",
-                    "params": {"especialista": "health-emotional-coach", "new_capability": new_caps[0]},
                 })
 
         # --- Proposal 3: Duplicate capability warnings → consolidate ---
@@ -196,6 +171,117 @@ class EvolutionProposer:
                     "priority": "medium",
                     "reason": f"{len(dup_caps)} duplicate capability ownerships detected",
                     "params": {"warnings": dup_caps},
+                })
+
+        # --- Proposal 4: Routing keywords missing → add to routing_map ---
+        orch = Orquestador()
+        # the routing_map for that domain lacks those keywords.
+        for s in low_conf_tasks + failed_tasks:
+            task_lower = s["task"].lower()
+            for division, kw_list in orch.routing_map.items():
+                # Check if any domain keyword is in the task
+                division_match = any(div_kw in task_lower for div_kw in kw_list)
+                if division_match:
+                    # Find words in the task not covered by any routing_map entry
+                    words = re.findall(r'\b[a-záéíóúñ]{4,}\b', task_lower)
+                    missing = []
+                    for w in words:
+                        if w not in stop and not any(w.startswith(stem) for stem in domain_stems):
+                            # Check if this word is NOT already in any routing_map list
+                            all_routing_kws = set()
+                            for dl in orch.routing_map.values():
+                                all_routing_kws.update(dl)
+                            if w not in all_routing_kws and w not in known_caps:
+                                missing.append(w)
+                    if missing:
+                        proposals.append({
+                            "id": f"add_routing_kw_{division}_{missing[0]}",
+                            "action": "add_routing_keywords",
+                            "priority": "high",
+                            "reason": f"Task '{s['task'][:40]}...' has '{missing[0]}' not in routing_map[{division}]",
+                            "params": {
+                                "division": division,
+                                "new_keywords": missing[:3],
+                                "task": s["task"],
+                                "confidence": s["confidence"],
+                            },
+                        })
+                        break  # One proposal per task is enough
+
+        # --- Proposal 5: Wrong specialist → change connection ---
+        # If a task routed to specialist X with low confidence, but specialist Y
+        # in the same maestro has a capability matching the task, propose changing.
+        for s in low_conf_tasks:
+            task_lower = s["task"].lower()
+            current_spec = s.get("specialist", "")
+            current_maestro = s.get("master", "")
+            # Find a better specialist in the same maestro
+            for agent_id, info in AGENTES_ESPECIALIZADOS.items():
+                if info["maestro"] != current_maestro:
+                    continue
+                if agent_id == current_spec:
+                    continue
+                for cap in info.get("capacidades", []):
+                    if cap.lower().replace("-", " ") in task_lower:
+                        proposals.append({
+                            "id": f"change_conn_{current_spec}_to_{agent_id}",
+                            "action": "change_connection",
+                            "priority": "high",
+                            "reason": f"Task '{s['task'][:40]}...' routed to {current_spec} (conf={s['confidence']}), but {agent_id} has matching capability '{cap}'",
+                            "params": {
+                                "from_division": s.get("master", "unknown"),
+                                "to_division": current_maestro,
+                                "keyword": cap,
+                                "from_specialist": current_spec,
+                                "to_specialist": agent_id,
+                                "task": s["task"],
+                                "capability": cap,
+                                "confidence": s["confidence"],
+                            },
+                        })
+                        break
+                else:
+                    continue
+                break
+
+        # --- Proposal 6: No capability exists → create new one ---
+        # If a degraded task has words that don't match ANY capability,
+        # and no existing capability covers the domain, propose creating one.
+        for s in low_conf_tasks:
+            task_lower = s["task"].lower()
+            # Check if any existing capability matches
+            idx = build_capability_index()
+            caps_text = " ".join(idx.keys()).lower()
+            has_cap_match = any(
+                w in caps_text for w in re.findall(r'\b[a-záéíóúñ]{4,}\b', task_lower)
+            )
+            if not has_cap_match:
+                proposals.append({
+                    "id": f"create_cap_{s['task'][:20]}",
+                    "action": "create_capability",
+                    "priority": "high",
+                    "reason": f"Task '{s['task'][:40]}...' has no matching capability in index",
+                    "params": {
+                        "task": s["task"],
+                        "confidence": s["confidence"],
+                        "specialist": s.get("specialist", ""),
+                    },
+                })
+
+        # --- Proposal 7: No change needed ---
+        # If routing is already correct (high confidence), flag as no_change.
+        for s in signals:
+            if s["confidence"] >= CONFIDENCE_THRESHOLD and s.get("specialist"):
+                proposals.append({
+                    "id": f"no_change_{s['task'][:20]}",
+                    "action": "no_change",
+                    "priority": "low",
+                    "reason": f"Task '{s['task'][:40]}...' already correctly routed (conf={s['confidence']})",
+                    "params": {
+                        "task": s["task"],
+                        "specialist": s["specialist"],
+                        "confidence": s["confidence"],
+                    },
                 })
 
         return proposals
@@ -226,17 +312,33 @@ class EvolutionApplier:
         """Apply a proposal. Returns {status, changes, regression_ok}."""
         action = proposal["action"]
         params = proposal["params"]
-        backup = self._backup("hermes_bridge.py") if action == "add_routing_keywords" else self._backup("agent_directory.json")
+
+        # Determine backup file based on action
+        if action in ("add_routing_keywords", "change_connection"):
+            backup = self._backup("hermes_bridge.py")
+            target_file = "hermes_bridge.py"
+        elif action in ("add_especialista_capability", "consolidate_capabilities"):
+            backup = self._backup("agent_directory.json")
+            target_file = "agent_directory.json"
+        else:
+            backup = None
+            target_file = None
+
         before_tests = self._run_tests()
 
         try:
             if action == "add_routing_keywords":
                 self._add_routing_keywords(params["division"], params["new_keywords"])
+            elif action == "change_connection":
+                self._change_connection(params["from_division"], params["to_division"], params["keyword"])
             elif action == "add_especialista_capability":
                 self._add_especialista_capability(params["especialista"], params["new_capability"])
             elif action == "consolidate_capabilities":
                 # Flag only — no structural change
                 changes = {"flagged": params["warnings"]}
+                return {"status": "success", "changes": changes, "regression_ok": True, "backup": str(backup)}
+            elif action == "no_change":
+                changes = {"reason": params["reason"], "note": "No routing improvement possible"}
                 return {"status": "success", "changes": changes, "regression_ok": True, "backup": str(backup)}
             else:
                 return {"status": "unknown_action", "regression_ok": False}
@@ -256,10 +358,39 @@ class EvolutionApplier:
                 "tests_after": after_tests,
             }
         except Exception as e:
-            if backup:
-                self._restore(backup, "hermes_bridge.py" if action == "add_routing_keywords" else "agent_directory.json")
+            if backup and target_file:
+                self._restore(backup, target_file)
                 build_capability_index()
             return {"status": "failed", "error": str(e), "regression_ok": False, "backup_restored": str(backup)}
+
+    def _change_connection(self, from_division: str, to_division: str, keyword: str):
+        """Move a keyword from one division's routing list to another in hermes_bridge.py."""
+        bridge_file = self.repo / "hermes_bridge.py"
+        content = bridge_file.read_text(encoding="utf-8")
+
+        # Remove keyword from source division
+        from_pattern = re.escape(f'"{keyword}"')
+        content = re.sub(
+            rf'("{from_division}": \[[^\]]*?){from_pattern}([^\]]*\])',
+            r'\1\2',
+            content
+        )
+        # Clean up double commas / empty slots
+        content = re.sub(r',\s*,', ',', content)
+        content = re.sub(r'\[\s*,', '[', content)
+        content = re.sub(r',\s*\]', ']', content)
+
+        # Add keyword to target division
+        target_pattern = re.compile(
+            rf'("{to_division}": \[[^\]]*?)\]',
+            re.DOTALL
+        )
+        def _add_kw(m):
+            existing = m.group(1)
+            return f'{existing}, "{keyword}"]'
+        content = target_pattern.sub(_add_kw, content, count=1)
+
+        bridge_file.write_text(content, encoding="utf-8")
 
     def _add_routing_keywords(self, division: str, new_keywords: list):
         """Add keywords to routing_map[division] in Orquestador."""
