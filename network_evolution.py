@@ -59,8 +59,13 @@ class PerformanceTracker:
 
         # Detect degradation signals
         if confidence < CONFIDENCE_THRESHOLD:
+            # Classify signal type
+            if not specialist or confidence == 0:
+                signal_type = "failed_routing"
+            else:
+                signal_type = "routing_degradado"
             signal = {
-                "type": "low_confidence",
+                "type": signal_type,
                 "task": task_description,
                 "confidence": confidence,
                 "specialist": specialist,
@@ -128,7 +133,7 @@ class EvolutionProposer:
         """Generate improvement proposals. Returns list of dicts."""
         proposals = []
         signals = self.tracker.get_degradation_signals()
-        low_conf_tasks = [s for s in signals if s["type"] == "low_confidence"]
+        low_conf_tasks = [s for s in signals if s["type"] in ("low_confidence", "routing_degradado")]
         failed_tasks = [s for s in signals if s["type"] == "failed_routing"]
 
         stop = {
@@ -142,23 +147,69 @@ class EvolutionProposer:
         orch = Orquestador()
 
         # --- Proposal 1: Low-confidence → add capability or routing keywords ---
+        # Para cada tarea de baja confianza, proponer capability en el
+        # maestro/especialista CORRECTO (no hardcode health-emotional-coach).
         if low_conf_tasks:
-            candidate_words = set()
             for s in low_conf_tasks:
-                ws = re.findall(r'\b[a-záéíóúñ]+\b', s["task"].lower())
-                for w in ws:
-                    if len(w) > 4 and w not in stop:
-                        if any(w.startswith(stem) for stem in domain_stems):
-                            candidate_words.add(w)
-            new_words = sorted(w for w in candidate_words if w not in known_caps)
-            if new_words:
-                proposals.append({
-                    "id": "add_capability",
-                    "action": "add_especialista_capability",
-                    "priority": "high",
-                    "reason": f"{len(low_conf_tasks)} low-confidence routings — unmapped domain terms: {new_words[:5]}",
-                    "params": {"especialista": "health-emotional-coach", "new_capability": new_words[0]},
-                })
+                task_lower = s["task"].lower()
+                current_maestro = s.get("master", "")
+                current_spec = s.get("specialist", "")
+                # Encontrar mejor especialista en el mismo maestro
+                best_spec = None
+                best_spec_score = 0
+                for agent_id, info in AGENTES_ESPECIALIZADOS.items():
+                    if info["maestro"] != current_maestro:
+                        continue
+                    score = 0
+                    for cap in info.get("capacidades", []):
+                        if cap.lower().replace("-", " ") in task_lower:
+                            score += 30
+                    if agent_id.lower().replace("-", " ") in task_lower:
+                        score += 20
+                    if score > best_spec_score:
+                        best_spec_score = score
+                        best_spec = agent_id
+                # Si el maestro tiene un mejor especialista, proponer cambio
+                if best_spec and best_spec != current_spec and best_spec_score >= 30:
+                    proposals.append({
+                        "id": f"change_conn_{current_spec}_to_{best_spec}",
+                        "action": "change_connection",
+                        "priority": "high",
+                        "reason": f"Task '{s['task'][:40]}...' routed to {current_spec} (conf={s['confidence']}), but {best_spec} has matching capability",
+                        "params": {
+                            "from_division": current_maestro,
+                            "to_division": current_maestro,
+                            "keyword": best_spec,
+                            "from_specialist": current_spec,
+                            "to_specialist": best_spec,
+                            "task": s["task"],
+                            "confidence": s["confidence"],
+                        },
+                    })
+                else:
+                    # No especialista en el maestro cubre la tarea → capability nueva
+                    ws = re.findall(r'\b[a-záéíóúñ]+\b', task_lower)
+                    stop = {
+                        "para", "con", "mis", "del", "una", "por", "que", "como",
+                        "necesito", "tengo", "quiero", "siento", "me", "mi", "mis",
+                        "el", "la", "los", "las", "un", "una", "y", "de", "en", "al",
+                        "después", "resuelto", "intensa", "emocional",
+                    }
+                    new_words = sorted(set(
+                        w for w in ws if len(w) > 4 and w not in stop
+                    ))
+                    if new_words:
+                        proposals.append({
+                            "id": f"add_cap_{current_maestro}_{new_words[0]}",
+                            "action": "add_especialista_capability",
+                            "priority": "high",
+                            "reason": f"Low-confidence routing (conf={s['confidence']}) — unmapped terms: {new_words[:5]}",
+                            "params": {
+                                "especialista": current_spec or "TBD",
+                                "new_capability": new_words[0],
+                                "master": current_maestro,
+                            },
+                        })
 
         # --- Proposal 3: Duplicate capability warnings → consolidate ---
         net = validate_network()
