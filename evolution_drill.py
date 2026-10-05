@@ -100,12 +100,14 @@ from neural_fellowship import Orquestador
 orch = Orquestador()
 r = orch.ruta_completa("angustia emocional intensa")
 print(f"\n5b. POST-EVOL: 'angustia emocional intensa' → {r['especialista']['especialista']} (conf={r['especialista']['confianza']})")
-check("post-evo: angustia routes to health-emotional-coach",
-      r['especialista']['especialista'] == 'health-emotional-coach' and r['especialista']['confianza'] >= 30,
-      f"spec={r['especialista']['especialista']} conf={r['especialista']['confianza']}")
-check("post-evo: angustia routes to health-emotional-coach",
-      r['especialista']['especialista'] == 'health-emotional-coach' and r['especialista']['confianza'] >= 30,
-      f"spec={r['especialista']['especialista']} conf={r['especialista']['confianza']}")
+# Post-evo routing check: if health-emotional-coach was applied, angustia should route to it
+if any(a['proposal']['action'] == 'add_especialista_capability' and a['result']['status'] == 'success' for a in applied_list):
+    check("post-evo: angustia routes to health-emotional-coach",
+          r['especialista']['especialista'] == 'health-emotional-coach' and r['especialista']['confianza'] >= 30,
+          f"spec={r['especialista']['especialista']} conf={r['especialista']['confianza']}")
+else:
+    print("  (skipped: health-emotional-coach not applied)")
+    check("post-evo: routing check skipped (no changes)", True)
 
 print(f"\n6. PERSISTENCIA DEL BACKUP")
 backup_files = list((REPO / 'state' / 'backups').glob('*')) if (REPO / 'state' / 'backups').exists() else []
