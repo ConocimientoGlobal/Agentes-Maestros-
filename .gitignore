@@ -40,5 +40,6 @@ orchestrator-logs/
 
 # Explicitly allow example configs inside .hermes/ (they are NOT secrets)
 # .hermes/config.example.yaml  ← tracked explicitly; not ignored above
-# Estado persistente del sistema (generado)
+# Estado persistente del sistema (generado) — EXCEPT routing_overrides.json
 state/
+!state/routing_overrides.json

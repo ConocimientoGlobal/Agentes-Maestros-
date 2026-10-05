@@ -754,16 +754,17 @@ class Orquestador:
         
         # Keywords extendidas por maestro para matching más preciso
         self.maestro_keywords = {
-            "NEXUS": ["python", "javascript", "typescript", "react", "vue", "angular", "node", "fastapi", "django", "flask", "spring", "docker", "kubernetes", "git", "github", "gitlab", "pip", "npm", "yarn", "install", "deploy", "ci/cd", "aws", "azure", "gcp", "linux", "sql", "nosql", "mongodb", "postgres", "redis", "api", "rest", "graphql", "microservicio", "testing", "pytest", "unittest"],
-            "AGENCY": ["seo", "google ads", "meta ads", "facebook ads", "instagram", "linkedin", "twitter", "content", "copywriting", "email marketing", "newsletter", "landing page", "conversion", "ctr", "roi", "cpc", "crm", "hubspot", "mailchimp", "klaviyo", "propuesta", "prospecto", "lead", "outbound"],
-            "ORION": ["investigación", "paper", "artículo", "estudio", "análisis", "datos", "encuesta", "estadística", "literature review", "meta-análisis", "científico", "académico", "tesis", "arxiv", "pubmed"],
-            "AURUM": ["modelo financiero", "valuación", "dcf", "lbo", "merger", "comps", "fp&a", "budget", "forecast", "inversión", "portafolio", "riesgo", "volatilidad", "crypto", "trading"],
-            "SENTINEL": ["seguridad", "pentest", "vulnerabilidad", "owasp", "exploit", "xss", "sql injection", "csrf", "rce", "reverse engineering", "malware", "forensics", "compliance", "soc2", "iso27001", "gdpr"],
-            "MERIDIAN": ["jira", "confluence", "asana", "trello", "notion", "sprint", "roadmap", "okr", "kpi", "métricas", "dashboard", "reporte", "reunión", "standup", "retrospective"],
-            "ARCAN": ["diseño", "ui", "ux", "figma", "sketch", "adobe", "illustrator", "photoshop", "branding", "logo", "paleta", "tipografía", "wireframe", "mockup", "prototipo", "animación", "motion"],
-            "HELIOS": ["gis", "mapas", "leaflet", "mapbox", "openlayers", "geoserver", "postgis", "geoespacial", "cartografía", "drones", "satélite", "remote sensing"],
-            "CRONUS": ["unity", "unreal", "godot", "game design", "minecraft", "modding", "pixel art", "shader", "level design", "narrativa"],
-            "MNEMOS": ["documentación", "wiki", "conocimiento", "onboarding", "sop", "proceso", "knowledge base", "ansiedad", "estrés", "emocional", "mental", "terapia", "salud"],
+            "NEXUS": ["python", "javascript", "typescript", "react", "vue", "angular", "node", "fastapi", "django", "flask", "spring", "docker", "kubernetes", "github", "gitlab", "pip", "npm", "yarn", "install", "deploy", "ci/cd", "aws", "azure", "gcp", "linux", "sql", "nosql", "mongodb", "postgres", "redis", "api", "rest", "graphql", "microservicio", "testing", "pytest", "unittest", "backend", "frontend", "devops", "servidor", "web", "app"],
+            "AGENCY": ["seo", "google ads", "meta ads", "facebook ads", "instagram", "linkedin", "twitter", "content", "copywriting", "email marketing", "newsletter", "landing page", "conversion", "ctr", "roi", "cpc", "hubspot", "mailchimp", "klaviyo", "propuesta", "prospecto", "lead", "outbound", "marketing", "campaña", "publicidad", "ads", "ecommerce", "tienda", "stripe", "online", "pasarela", "pago", "carrito", "checkout"],
+            "ORION": ["investigación", "paper", "artículo", "estudio", "análisis", "datos", "encuesta", "estadística", "literature review", "meta-análisis", "científico", "académico", "tesis", "arxiv", "pubmed", "machine learning", "predicción", "modelo predictivo", "pipeline de datos", "pandas"],
+            "AURUM": ["modelo financiero", "valuación", "dcf", "lbo", "merger", "comps", "fp&a", "budget", "forecast", "inversión", "portafolio", "riesgo", "volatilidad", "crypto", "trading", "finanzas", "contabilidad"],
+            "SENTINEL": ["seguridad", "pentest", "vulnerabilidad", "owasp", "exploit", "xss", "sql injection", "csrf", "rce", "reverse engineering", "malware", "forensics", "compliance", "soc2", "iso27001", "gdpr", "auditoría", "brecha", "appsec"],
+            "MERIDIAN": ["jira", "confluence", "asana", "trello", "notion", "sprint", "roadmap", "okr", "kpi", "métricas", "dashboard", "reporte", "reunión", "standup", "retrospective", "producto", "feature", "priorización"],
+            "ARCAN": ["diseño", "ui", "ux", "figma", "sketch", "adobe", "illustrator", "photoshop", "branding", "logo", "paleta", "tipografía", "wireframe", "mockup", "prototipo", "animación", "motion", "visual", "ilustración", "3d", "textura"],
+            "HELIOS": ["gis", "mapas", "leaflet", "mapbox", "openlayers", "geoserver", "postgis", "geoespacial", "cartografía", "drones", "satélite", "remote sensing", "espacial", "web"],
+            "CRONUS": ["unity", "unreal", "godot", "game design", "minecraft", "modding", "pixel art", "shader", "level design", "narrativa", "juego", "game", "videojuego", "gamedev", "mobile game", "3d", "textura", "optimizar"],
+            "MNEMOS": ["documentación", "wiki", "conocimiento", "onboarding", "sop", "proceso", "knowledge base", "ansiedad", "estrés", "emocional", "mental", "terapia", "salud", "clínico", "fitness", "nutrición"],
+            "PROPHET": ["ml", "modelo", "predicción", "predecir", "machine learning", "model-training", "ml-engineering", "data-science", "fine-tuning", "rlhf", "evaluation", "mcp-builder", "churn", "ia", "inteligencia artificial"],
         }
         # Keywords de especialista por dominio (dominan sobre keywords de maestro)
         self.especialista_keywords = {
@@ -881,23 +882,120 @@ class Orquestador:
             if maestro and info["maestro"] != maestro:
                 continue
             score = 0
-            # Match por capacidades
-            for cap in info.get("capacidades", []):
-                if cap.lower().replace("-", " ") in tarea_lower:
-                    score += 30
+            matched_tokens = set()
+            caps = info.get("capacidades", [])
+
+            # --- MATCH DE CAPABILITIES (token-based, no substring) ---
+            import re as _re
+            tarea_tokens = set(_re.findall(r'[a-záéíóúñ]{3,}', tarea_lower))
+            _GENERIC = {"app", "web", "data", "design", "system", "user", "service", "tool", "general", "management", "page"}
+
+            # Sinónimos ES→EN: expandir tokens de tarea
+            _SINONIMOS = {
+                "diseño": "design", "diseña": "design", "diseñar": "design",
+                "logo": "logo", "logotipo": "logo", "minimalista": "minimal",
+                "landing": "landing", "pagina": "page", "página": "page", "responsivo": "responsive",
+                "datos": "data", "analisis": "analytics", "analítica": "analytics", "analizá": "analytics",
+                "ventas": "sales", "trimestre": "quarter",
+                "automatizacion": "automation", "automatización": "automation", "automatizá": "automation",
+                "factura": "invoice", "facturas": "invoice", "pago": "payment", "pagos": "payment",
+                "tienda": "store", "online": "online", "comercio": "commerce", "pasarela": "gateway",
+                "notificacion": "notification", "notificación": "notification", "notifications": "notification",
+                "push": "push", "sistema": "system", "rendimiento": "performance",
+                "optimizacion": "optimization", "optimización": "optimization", "optimizá": "optimization",
+                "base": "database", "chatbot": "chatbot", "bot": "bot",
+                "lenguaje": "language", "natural": "natural", "procesamiento": "processing",
+                "autenticacion": "authentication", "autenticación": "authentication", "oauth": "oauth",
+                "api": "api", "movil": "mobile", "móvil": "mobile", "ios": "ios", "android": "android",
+                "app": "app", "aplicacion": "app", "aplicación": "app",
+                "video": "video", "animacion": "animation", "animación": "animation",
+                "sonido": "sound", "audio": "audio", "musica": "music", "música": "music",
+                "redes": "social", "social": "social", "contenido": "content",
+                "marketing": "marketing", "branding": "branding", "marca": "brand",
+                "identidad": "identity", "web": "web", "frontend": "frontend",
+                "backend": "backend", "servidor": "server",
+                "seguridad": "security", "testing": "testing", "test": "test",
+                "devops": "devops", "infraestructura": "infrastructure",
+                "juego": "game", "3d": "3d", "2d": "2d",
+                "modelo": "model", "pixel": "pixel", "sprite": "sprite",
+                "ui": "ui", "ux": "ux", "interfaz": "interface", "usuario": "user",
+                "carga": "load", "velocidad": "speed", "rapido": "fast", "rápido": "fast",
+                "cicd": "cicd", "cloud": "cloud", "kubernetes": "kubernetes",
+                "blockchain": "blockchain", "crypto": "crypto", "smart": "contract",
+                "producto": "product", "roadmap": "roadmap", "gestion": "management",
+                "documentacion": "documentation", "documentación": "documentation",
+                "traduccion": "translation", "traducción": "translation", "idioma": "language",
+                "legal": "legal", "contrato": "contract", "compliance": "compliance",
+                "finanzas": "finance", "presupuesto": "budget", "costo": "cost",
+                "historia": "history", "investigacion": "research", "investigación": "research",
+                "fuentes": "sources", "primarias": "primary",
+                "desarrollá": "development", "implementá": "implementation",
+                "construí": "build", "creá": "create", "gestión": "management",
+            }
+            for _tok in list(tarea_tokens):
+                if _tok in _SINONIMOS:
+                    tarea_tokens.add(_SINONIMOS[_tok])
+
+            for cap in caps:
+                cap_norm = cap.lower().replace("-", " ")
+                if len(cap_norm) <= 2 or cap_norm.isdigit():
+                    continue
+                cap_toks = set(_re.findall(r'[a-z]{3,}', cap_norm))
+                # Normalizar plurals: "apis" → "api", "systems" → "system", etc.
+                cap_toks_normalized = set()
+                for ct in cap_toks:
+                    if ct.endswith('s') and len(ct) > 3:
+                        cap_toks_normalized.add(ct[:-1])
+                    cap_toks_normalized.add(ct)
+                exact = cap_toks_normalized & tarea_tokens
+                if exact:
+                    non_generic = exact - _GENERIC
+                    if non_generic:
+                        score += 30 * len(non_generic)
+                        matched_tokens.update(non_generic)
+                    elif len(exact) >= 2:
+                        score += 10
+
+            # --- BONUS: proporción de tokens relevantes coincidentes ---
+            relevantes = tarea_tokens - _GENERIC
+            if relevantes and matched_tokens:
+                ratio = len(matched_tokens) / len(relevantes)
+                if ratio >= 0.5 and len(matched_tokens) >= 2:
+                    score += 25  # match fuerte
+                elif ratio >= 0.33 and len(matched_tokens) >= 1:
+                    score += 15  # match parcial
+
+            # Si matched_tokens vacío pero hay match por nombre → aceptar
+            # solo si score >= 30 (indica match real de capability, no solo nombre)
+            if not matched_tokens and score >= 30:
+                matched_tokens.add("__name_match__")
+
             # Match por nombre
             if agent_id.lower().replace("-", " ") in tarea_lower:
                 score += 20
+
             # Bonus si el maestro coincide
             if info["maestro"] == maestro:
                 score += 10
-            # Fallback: keywords del maestro coinciden EXACTAMENTE en capacidades del especialista
+
+            # Fallback: keywords del maestro coinciden EXACTAMENTE en capacidades
             if score > 0 and maestro_kws:
-                caps_list = [c.lower() for c in info.get("capacidades", [])]
+                caps_list = [c.lower() for c in caps]
                 for mk in maestro_kws:
                     if mk in caps_list and len(mk) > 4:
                         score += 8
                         break
+
+            # === CORRECCIÓN: filtro anti-falsos-positivos ===
+            # No aceptar si no hay ningún match (capability o nombre)
+            if score == 0:
+                continue
+
+            # matched_tokens vacío → no hay evidencia real de capability
+            # EXCEPTO __name_match__ (nombre de capability coincide con tarea)
+            real_tokens = matched_tokens - {"__name_match__"}
+            if not real_tokens:
+                continue
 
             if score > best_score:
                 best_score = score
@@ -905,33 +1003,11 @@ class Orquestador:
                     "especialista": agent_id,
                     "maestro": info["maestro"],
                     "confianza": min(score, 100),
-                    "capacidades": info.get("capacidades", [])
+                    "capacidades": info.get("capacidades", []),
+                    "matched_tokens": matched_tokens,
                 }
 
-        # Si el mejor match tiene confianza baja (< 30), intentar con keywords de especialista
-        if best_score < 30 and maestro in self.especialista_keywords:
-            for categoria, palabras in self.especialista_keywords[maestro].items():
-                for palabra in palabras:
-                    if palabra.lower() in tarea_lower:
-                        # Buscar especialista con esa palabra en capacidades
-                        for agent_id, info in AGENTES_ESPECIALIZADOS.items():
-                            if info["maestro"] != maestro:
-                                continue
-                            caps_text = " ".join(info.get("capacidades", [])).lower().replace("-", " ")
-                            if palabra.lower() in caps_text:
-                                # Nuevo especialista encontrado — reemplazar si mejor score
-                                cat_score = 50 + (30 if palabra.lower() == tarea_lower.split()[0] else 0)
-                                if cat_score > best_score:
-                                    best_score = cat_score
-                                    best_match = {
-                                        "especialista": agent_id,
-                                        "maestro": info["maestro"],
-                                        "confianza": min(cat_score, 100),
-                                        "capacidades": info.get("capacidades", [])
-                                    }
-                        break  # Una palabra de la categoría ya fue suficiente
-
-        return best_match or {"especialista": None, "maestro": maestro or "PHOENIX", "confianza": 0, "capacidades": []}
+        return best_match or None
 
     def ruta_completa(self, tarea: str) -> dict:
         """Routing completo: maestro + especialista."""
@@ -943,6 +1019,14 @@ class Orquestador:
             "especialista": especialista_result,
             "automatizable": AGENTES_MAESTROS.get(maestro_result["maestro"], {}).get("automatizable", False)
         }
+
+    def _detectar_traduccion(self, tarea: str) -> bool:
+        """Detecta si la tarea es de traducción por keywords lingüísticas."""
+        tarea_lower = tarea.lower()
+        # Keywords que indican traducción (idiomas no nativos del inglés)
+        idiomas = {"japonés", "chino", "árabe", "ruso", "coreano", "hindi", "francés", "alemán", "italiano", "portugués", "español"}
+        tokens = set(tarea_lower.split())
+        return any(idioma in tokens for idioma in idiomas) and ("traduc" in tarea_lower or "translate" in tarea_lower)
 
 
 # ============================================================================
