@@ -782,9 +782,39 @@ class Orquestador:
                 "blockchain": ["blockchain", "smart contract", "solidity", "web3", "defi"],
             }
         }
+        # Persistencia de overrides de routing (aplicados por EvolutionProposer)
+        self._routing_overrides_file = os.path.join(STATE_DIR, "routing_overrides.json")
+        self._load_routing_overrides()
+
+    def _load_routing_overrides(self):
+        """Carga overrides de routing desde archivo persistente."""
+        if os.path.exists(self._routing_overrides_file):
+            try:
+                with open(self._routing_overrides_file, "r") as f:
+                    overrides = json.load(f)
+                for division, keywords in overrides.items():
+                    if division in self.routing_map:
+                        existing = set(self.routing_map[division])
+                        for kw in keywords:
+                            if kw not in existing:
+                                self.routing_map[division].append(kw)
+                                existing.add(kw)
+            except (json.JSONDecodeError, IOError):
+                pass
+
+    def save_routing_overrides(self):
+        """Guarda overrides de routing a archivo persistente."""
+        os.makedirs(STATE_DIR, exist_ok=True)
+        overrides = {}
+        for division, keywords in self.routing_map.items():
+            overrides[division] = keywords
+        try:
+            with open(self._routing_overrides_file, "w") as f:
+                json.dump(overrides, f, indent=2, ensure_ascii=False)
+        except IOError:
+            pass
 
     def determinar_maestro(self, tarea: str) -> dict:
-        """Determina el óptimo para una tarea con scoring mejorado."""
         tarea_lower = tarea.lower()
         scores = {}
 

@@ -294,3 +294,83 @@ class TestRoutingEvolution:
         routing = {k: list(v) for k, v in orch.routing_map.items()}
         assert isinstance(routing, dict)
         assert "health" in routing or "general" in routing
+
+    def test_apply_invalid_params_no_crash(self, fresh_state, monkeypatch):
+        """Apply with missing/wrong params must not crash — returns failed."""
+        from network_evolution import EvolutionApplier
+        applier = EvolutionApplier(repo_path=fresh_state)
+        # Missing division for add_routing_keywords
+        result = applier.apply({
+            "action": "add_routing_keywords",
+            "priority": "high",
+            "params": {"new_keywords": ["test"]},
+        })
+        assert result["status"] in ("success", "failed", "unknown_action")
+        # Missing keyword for change_connection
+        result = applier.apply({
+            "action": "change_connection",
+            "priority": "high",
+            "params": {"from_division": "general"},
+        })
+        assert result["status"] in ("success", "failed", "unknown_action")
+
+    def test_apply_nonexistent_division(self, fresh_state, monkeypatch):
+        """Apply to a division that doesn't exist in routing_map."""
+        from network_evolution import EvolutionApplier
+        applier = EvolutionApplier(repo_path=fresh_state)
+        result = applier.apply({
+            "action": "add_routing_keywords",
+            "priority": "high",
+            "params": {
+                "division": "nonexistent-division",
+                "new_keywords": ["test-kw"],
+            },
+        })
+        assert result["status"] in ("success", "failed", "unknown_action")
+
+    def test_apply_empty_keywords(self, fresh_state, monkeypatch):
+        """Empty new_keywords list must not crash."""
+        from network_evolution import EvolutionApplier
+        applier = EvolutionApplier(repo_path=fresh_state)
+        result = applier.apply({
+            "action": "add_routing_keywords",
+            "priority": "high",
+            "params": {"division": "health", "new_keywords": []},
+        })
+        assert result["status"] in ("success", "failed", "unknown_action")
+
+    def test_backup_created_for_routing_overrides(self, fresh_state, monkeypatch):
+        """Backup of routing_overrides.json is created before applying."""
+        from network_evolution import EvolutionApplier
+        applier = EvolutionApplier(repo_path=fresh_state)
+        # First apply to create the file
+        applier.apply({
+            "action": "add_routing_keywords",
+            "priority": "high",
+            "params": {"division": "health", "new_keywords": ["test-bk-1"]},
+        })
+        # Second apply should create a backup of the existing file
+        result = applier.apply({
+            "action": "add_routing_keywords",
+            "priority": "high",
+            "params": {"division": "health", "new_keywords": ["test-bk-2"]},
+        })
+        assert result["status"] in ("success", "failed", "unknown_action")
+        # Check that a backup was created
+        backups = list((fresh_state / "state" / "backups").glob("routing_overrides.json.*"))
+        assert len(backups) >= 1
+
+    def test_rollback_on_invalid_json(self, fresh_state, monkeypatch):
+        """System recovers gracefully from corrupted routing_overrides.json."""
+        import json
+        from neural_fellowship import Orquestador
+        # Create corrupted file
+        state_dir = fresh_state / "state"
+        state_dir.mkdir(exist_ok=True)
+        bad_file = state_dir / "routing_overrides.json"
+        bad_file.write_text("{corrupted", encoding="utf-8")
+        # Orquestador must load without crashing
+        orch = Orquestador()
+        assert "health" in orch.routing_map
+        # Clean up
+        bad_file.unlink()

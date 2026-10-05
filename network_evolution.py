@@ -304,6 +304,17 @@ class EvolutionApplier:
         shutil.copy2(src, dst)
         return dst
 
+    def _reload_orquestador(self, orch=None):
+        """Force-reload Orquestador module to persist routing changes.
+        If orch is provided, use it directly (avoids re-import side effects)."""
+        import importlib
+        if orch is None:
+            import neural_fellowship
+            importlib.reload(neural_fellowship)
+        else:
+            # Ensure the Orquestador's routing_map is saved to disk
+            orch.save_routing_overrides()
+
     def _restore(self, backup_path: Path, filename: str):
         dst = self.repo / filename
         shutil.copy2(backup_path, dst)
@@ -315,8 +326,8 @@ class EvolutionApplier:
 
         # Determine backup file based on action
         if action in ("add_routing_keywords", "change_connection"):
-            backup = self._backup("hermes_bridge.py")
-            target_file = "hermes_bridge.py"
+            backup = self._backup("state/routing_overrides.json")
+            target_file = "state/routing_overrides.json"
         elif action in ("add_especialista_capability", "consolidate_capabilities"):
             backup = self._backup("agent_directory.json")
             target_file = "agent_directory.json"
@@ -364,60 +375,30 @@ class EvolutionApplier:
             return {"status": "failed", "error": str(e), "regression_ok": False, "backup_restored": str(backup)}
 
     def _change_connection(self, from_division: str, to_division: str, keyword: str):
-        """Move a keyword from one division's routing list to another in hermes_bridge.py."""
-        bridge_file = self.repo / "hermes_bridge.py"
-        content = bridge_file.read_text(encoding="utf-8")
-
-        # Remove keyword from source division
-        from_pattern = re.escape(f'"{keyword}"')
-        content = re.sub(
-            rf'("{from_division}": \[[^\]]*?){from_pattern}([^\]]*\])',
-            r'\1\2',
-            content
-        )
-        # Clean up double commas / empty slots
-        content = re.sub(r',\s*,', ',', content)
-        content = re.sub(r'\[\s*,', '[', content)
-        content = re.sub(r',\s*\]', ']', content)
-
-        # Add keyword to target division
-        target_pattern = re.compile(
-            rf'("{to_division}": \[[^\]]*?)\]',
-            re.DOTALL
-        )
-        def _add_kw(m):
-            existing = m.group(1)
-            return f'{existing}, "{keyword}"]'
-        content = target_pattern.sub(_add_kw, content, count=1)
-
-        bridge_file.write_text(content, encoding="utf-8")
+        """Move a keyword from one division's routing to another via persistent overrides."""
+        orch = Orquestador()
+        # Remove from source division if present
+        if from_division in orch.routing_map and keyword in orch.routing_map[from_division]:
+            orch.routing_map[from_division].remove(keyword)
+        # Add to target division (no duplicates)
+        if to_division in orch.routing_map and keyword not in orch.routing_map[to_division]:
+            orch.routing_map[to_division].append(keyword)
+        orch.save_routing_overrides()
+        # Reload Orquestador to persist changes
+        self._reload_orquestador(orch)
 
     def _add_routing_keywords(self, division: str, new_keywords: list):
-        """Add keywords to routing_map[division] in Orquestador."""
-        # Read the Orquestador's routing_map and extend it
-        # We patch the source file to be persistent
-        bridge_file = self.repo / "hermes_bridge.py"
-        content = bridge_file.read_text(encoding="utf-8")
-
-        # Find the health routing line and extend it
+        """Add keywords to routing_map[division] via persistent overrides."""
+        orch = Orquestador()
+        if division not in orch.routing_map:
+            return
+        existing = set(orch.routing_map[division])
         for kw in new_keywords:
-            kw_escaped = kw.replace('"', '\\"')
-            # We need to add the keyword to the routing_map in neural_fellowship.py
-            # But hermes_bridge imports Orquestador, so we patch neural_fellowship.py
-            nf_file = self.repo / "neural_fellowship.py"
-            nf_content = nf_file.read_text(encoding="utf-8")
-
-            # Find the health routing list
-            health_line = re.search(
-                r'("health": \[.*?)\]', nf_content
-            )
-            if health_line:
-                old_list = health_line.group(1)
-                # Check if keyword already present
-                if f'"{kw}"' not in nf_content:
-                    new_list = old_list + f', "{kw}"'
-                    nf_content = nf_content.replace(old_list, new_list, 1)
-                    nf_file.write_text(nf_content, encoding="utf-8")
+            if kw not in existing:
+                orch.routing_map[division].append(kw)
+                existing.add(kw)
+        orch.save_routing_overrides()
+        self._reload_orquestador(orch)
 
     def _add_especialista_capability(self, especialista: str, capability: str):
         """Add a capability to a specialist in agent_directory.json."""
