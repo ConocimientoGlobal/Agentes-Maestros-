@@ -579,6 +579,14 @@ AGENTES_MAESTROS = {
         "routing": "Resumen ejecutivo, soporte a decisiones, alineación de stakeholders",
         "automatizable": False,
     },
+    "FABRICA": {
+        "dominio": "Fábrica de Maestros",
+        "division": "cross → usa NEXUS",
+        "emoji": "🏭",
+        "especialidades": ["analizar-reutilización", "investigar", "diseñar-arquitectura", "generar-propuesta", "validar", "registrar", "implementación-controlada"],
+        "routing": "Crear capability, diseñar capacidad, analizar capability gap, construir extensión, investigar implementación, propuesta de arquitectura, implementación controlada",
+        "automatizable": False,
+    },
 }
 
 # ============================================================================
@@ -765,6 +773,7 @@ class Orquestador:
             "CRONUS": ["unity", "unreal", "godot", "game design", "minecraft", "modding", "pixel art", "shader", "level design", "narrativa", "juego", "game", "videojuego", "gamedev", "mobile game", "3d", "textura", "optimizar"],
             "MNEMOS": ["documentación", "wiki", "conocimiento", "onboarding", "sop", "proceso", "knowledge base", "ansiedad", "estrés", "emocional", "mental", "terapia", "salud", "clínico", "fitness", "nutrición"],
             "PROPHET": ["ml", "modelo", "predicción", "predecir", "machine learning", "model-training", "ml-engineering", "data-science", "fine-tuning", "rlhf", "evaluation", "mcp-builder", "churn", "ia", "inteligencia artificial"],
+            "FABRICA": ["capability", "capacidades", "crear capacidad", "capability gap", "diseñar capacidad", "construir extensión", "investigar implementación", "propuesta de arquitectura", "implementación controlada", "fabrica de maestros", "constructor", "implementador", "evolution proposer", "propuesta aprobada", "arquitectura", "propuesta", "implementación"],
         }
         # Keywords de especialista por dominio (dominan sobre keywords de maestro)
         self.especialista_keywords = {

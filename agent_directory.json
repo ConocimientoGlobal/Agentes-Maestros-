@@ -333,6 +333,11 @@
         "tipo": "salud-mental"
       },
       "automatizable": false
+    },
+    "FABRICA": {
+      "emoji": "🏭",
+      "dominio": "Fábrica de Maestros",
+      "division": "cross → usa NEXUS"
     }
   },
   "especialistas": {
