@@ -78,6 +78,7 @@ AGENTES_MAESTROS = {
     "NEXUS": {
         "dominio": "Desarrollo",
         "division": "engineering",
+    "tools": ["run"],
         "emoji": "⚙️",
         "especialidades": ["frontend", "backend", "mobile", "devops", "database", "security-code", "ai-engineering", "llm-post-training", "rag", "prompt-engineering", "api-platform", "embedded", "webassembly", "search-relevance", "multi-agent-systems"],
         "routing": "Código, arquitectura de sistemas, infraestructura, bases de datos, AI/ML, LLMs",
