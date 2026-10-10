@@ -14,6 +14,7 @@ CAP_INDEX = REPO_PATH / "state" / "capability_index.json"
 
 # Importar capa de ejecución reutilizable
 import ejecutor_real
+import ejecutor_hermes
 
 # Integración EvolutionProposer — capability gap → propuesta de evolución
 from network_evolution import PerformanceTracker, EvolutionProposer
@@ -135,6 +136,7 @@ EXECUTION_STRATEGIES = {
     "diseno_visual": ejecutor_real._ejecutar_diseño,
     "videojuego": ejecutor_real._ejecutar_videojuego,
     "exec_script": ejecutor_real._ejecutar_script,
+    "hermes_agent": ejecutor_hermes._ejecutar_con_hermes,
 }
 
 # Reglas de resolución: (specialist, capability_pattern) → strategy_name
