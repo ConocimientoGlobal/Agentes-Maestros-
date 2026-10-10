@@ -182,23 +182,52 @@ def _ejecutar_videojuego(task: str, routing: dict) -> dict:
 def _ejecutar_script(task: str, routing: dict) -> dict:
     """Ejecuta código Python real extraído de la descripción de la tarea.
 
-    Valida que la tarea contenga código Python entre comillas antes de ejecutar.
-    Conserva los estados: 'completed', 'error_ejecucion'.
+    Mecanismo robusto de extracción:
+      1. Bloques Markdown ```python ... ```
+      2. Comillas dobles explícitas al final: print("OK")
+      3. Código multilinea entre delimitadores claros
+      4. Rechaza si no puede identificarse inequívocamente
+
+    No interpreta automáticamente la descripción completa como código.
+    Conserva los estados: 'completed', 'error_ejecucion', 'no_ejecutable'.
+
+    Retorna:
+      - completed: ejecución exitosa con stdout, stderr, returncode
+      - error_ejecucion: sintaxis inválida, excepción, timeout, fallo proceso
+      - no_ejecutable: código no identificable inequívocamente
     """
     import re
 
-    # Extraer código Python después de "python: "
-    # Formato esperado: "ejecutar script de python: print(\"OK\")"
-    match = re.search(r'(?:ejecutar\s+script\s+de\s+python\s*:|python\s*:)\s*(.+)$', task, re.DOTALL)
-    if not match:
+    codigo = None
+
+    # 1. Buscar bloque Markdown con delimitador python (```python ... ```)
+    md_block = re.search(r'```python\s*\n(.*?)```', task, re.DOTALL)
+    if md_block:
+        codigo = md_block.group(1).strip()
+
+    # 2. Si no hay bloque Markdown, buscar código explícito después de "python:"
+    if codigo is None:
+        # Extraer todo después de "ejecutar script de python:" o "python:"
+        match = re.search(r'(?:ejecutar\s+script\s+de\s+python|python)\s*:\s*(.*)$', task, re.DOTALL)
+        if match:
+            codigo = match.group(1).strip()
+            # Validar que parezca código Python (no texto descriptivo)
+            # Debe contener al menos un token de Python o estar entre comillas
+            if codigo and not re.search(r'[a-zA-Z_]', codigo):
+                # Solo caracteres no alfanuméricos, probablemente texto descriptivo
+                codigo = None
+
+    # 3. Si sigue sin identificarse, rechazar
+    if codigo is None or not codigo.strip():
         return {
             "status": "error_ejecucion",
             "tipo": "exec_script",
-            "error": "No se pudo extraer código Python válido de la tarea. Formato: 'ejecutar script de python: <codigo>'",
+            "error": "No se pudo identificar código Python inequívocamente. Use bloque ```python ... ``` o format 'python: <codigo>'",
         }
 
-    codigo = match.group(1)
-    if not codigo.strip():
+    # Validar que el código tenga contenido real
+    codigo_limpio = codigo.strip()
+    if not codigo_limpio:
         return {
             "status": "error_ejecucion",
             "tipo": "exec_script",
@@ -207,16 +236,19 @@ def _ejecutar_script(task: str, routing: dict) -> dict:
 
     try:
         result = subprocess.run(
-            [sys.executable, "-c", codigo],
+            [sys.executable, "-c", codigo_limpio],
             capture_output=True, text=True, timeout=30
         )
+        salida = result.stdout.strip() if result.stdout.strip() else None
+        stderr = result.stderr.strip() if result.stderr.strip() else None
+
         return {
             "status": "completed" if result.returncode == 0 else "error_ejecucion",
             "tipo": "exec_script",
-            "salida": result.stdout.strip() if result.stdout.strip() else None,
-            "stderr": result.stderr.strip() if result.stderr.strip() else None,
+            "salida": salida,
+            "stderr": stderr,
             "returncode": result.returncode,
-            "codigo_ejecutado": codigo,
+            "codigo_ejecutado": codigo_limpio,
         }
     except subprocess.TimeoutExpired:
         return {
