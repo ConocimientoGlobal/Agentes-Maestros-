@@ -179,6 +179,59 @@ def _ejecutar_videojuego(task: str, routing: dict) -> dict:
     }
 
 
+def _ejecutar_script(task: str, routing: dict) -> dict:
+    """Ejecuta código Python real extraído de la descripción de la tarea.
+
+    Valida que la tarea contenga código Python entre comillas antes de ejecutar.
+    Conserva los estados: 'completed', 'error_ejecucion'.
+    """
+    import re
+
+    # Extraer código Python después de "python: "
+    # Formato esperado: "ejecutar script de python: print(\"OK\")"
+    match = re.search(r'(?:ejecutar\s+script\s+de\s+python\s*:|python\s*:)\s*(.+)$', task, re.DOTALL)
+    if not match:
+        return {
+            "status": "error_ejecucion",
+            "tipo": "exec_script",
+            "error": "No se pudo extraer código Python válido de la tarea. Formato: 'ejecutar script de python: <codigo>'",
+        }
+
+    codigo = match.group(1)
+    if not codigo.strip():
+        return {
+            "status": "error_ejecucion",
+            "tipo": "exec_script",
+            "error": "El código Python extraído está vacío.",
+        }
+
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", codigo],
+            capture_output=True, text=True, timeout=30
+        )
+        return {
+            "status": "completed" if result.returncode == 0 else "error_ejecucion",
+            "tipo": "exec_script",
+            "salida": result.stdout.strip() if result.stdout.strip() else None,
+            "stderr": result.stderr.strip() if result.stderr.strip() else None,
+            "returncode": result.returncode,
+            "codigo_ejecutado": codigo,
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error_ejecucion",
+            "tipo": "exec_script",
+            "error": "Timeout: la ejecución excedió 30 segundos.",
+        }
+    except Exception as e:
+        return {
+            "status": "error_ejecucion",
+            "tipo": "exec_script",
+            "error": f"{type(e).__name__}: {e}",
+        }
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()

@@ -134,6 +134,7 @@ EXECUTION_STRATEGIES = {
     "analisis_financiero": ejecutor_real._ejecutar_analisis_financiero,
     "diseno_visual": ejecutor_real._ejecutar_diseño,
     "videojuego": ejecutor_real._ejecutar_videojuego,
+    "exec_script": ejecutor_real._ejecutar_script,
 }
 
 # Reglas de resolución: (specialist, capability_pattern) → strategy_name
@@ -190,17 +191,24 @@ TASK_KEYWORD_STRATEGY = {
     ("diseño", "visual"): "diseno_visual",
     ("videojuego",): "videojuego",
     ("3d", "motor"): "videojuego",
+    ("ejecutar", "script", "python"): "exec_script",
 }
 
 
-def resolve_execution(specialist, capabilities, task):
+MASHERA_TOOLS_MAP = {
+    "run": "exec_script",
+}
+
+
+def resolve_execution(specialist, capabilities, task, master=None, routing=None):
     """Determina la estrategia de ejecución de forma paramétrica.
 
     Cadena de resolución:
       1. RESOLUTION_RULES (specialist, capability) → strategy
       2. CAPABILITY_STRATEGY (capability genérica) → strategy
       3. TASK_KEYWORD_STRATEGY (keywords de tarea) → strategy
-      4. None → no_ejecutable
+      4. Master tools map (master.tools) → strategy
+      5. None → no_ejecutable
 
     NO es una lista if/else gigante. Es búsqueda data-driven.
     """
@@ -220,6 +228,15 @@ def resolve_execution(specialist, capabilities, task):
     for keywords, strategy in TASK_KEYWORD_STRATEGY.items():
         if all(kw in task_lower for kw in keywords):
             return strategy, specialist, "task_keyword"
+
+    # 4. Por tools del maestro (ej: NEXUS tools=["run"] → exec_script)
+    from neural_fellowship import AGENTES_MAESTROS
+    if master and master in AGENTES_MAESTROS:
+        master_tools = AGENTES_MAESTROS[master].get("tools", [])
+        for tool_name in master_tools:
+            if tool_name in MASHERA_TOOLS_MAP:
+                strategy = MASHERA_TOOLS_MAP[tool_name]
+                return strategy, specialist, "maestro_tools"
 
     return None, specialist, "sin_handler"
 
@@ -335,6 +352,8 @@ def ejecutar(task, top_n=3):
         base.get("especialista") or "",
         spec_block.get("capacidades", []),
         task,
+        master=base.get("master"),
+        routing=routing,
     )
     base["handler"] = handler
     base["resuelto_via"] = via
